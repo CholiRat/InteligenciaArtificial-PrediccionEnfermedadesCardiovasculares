@@ -1,0 +1,130 @@
+\documentclass[conference]{IEEEtran}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-noindentfirst]{babel}
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{placeins}
+
+\begin{document}
+
+% --- Textos en español para los encabezados automáticos de IEEEtran ---
+% (se definen después de \begin{document} porque babel reasigna estos
+%  nombres al seleccionar el idioma, y sobreescribiría un \renewcommand
+%  hecho antes en el preámbulo)
+\renewcommand{\abstractname}{Resumen (Preliminar)}
+\def\IEEEkeywordsname{Palabras Clave}
+\renewcommand{\tablename}{Tabla}
+
+\title{\LARGE Análisis de Equidad en Modelos Predictivos: Disparidad de Falsos Positivos Demográficos en la Predicción de Riesgo Cardiovascular Mediante Modelos Tabulares}
+
+\author{
+\IEEEauthorblockN{\large Daniel Alemán Ruiz, Sebastián Rodríguez Sánchez, Lindsay Marín Sánchez}
+\IEEEauthorblockA{
+Escuela de Ingeniería en Computación, Instituto Tecnológico de Costa Rica\\
+Cartago, Costa Rica\\
+\footnotesize IC-6200 -- Inteligencia Artificial $\cdot$ Prof. Kenneth Obando Rodríguez $\cdot$ Proyecto: Primera Etapa $\cdot$ II Semestre 2026 $\cdot$ 1 de setiembre del 2026
+}
+}
+
+\maketitle
+
+\begin{abstract}
+% TODO: reemplazar por el resumen real una vez definida la Introducción.
+\end{abstract}
+
+\begin{IEEEkeywords}
+\end{IEEEkeywords}
+
+\section{Introducción}
+% TODO: desarrollar la introducción completa.
+
+\section{Trabajos Relacionados}
+
+\subsection{Eje A (El Problema)}
+% TODO: desarrollar el Eje A.
+
+\subsection{Eje B: Las Técnicas}
+
+\subsubsection{Estado actual de los métodos y sus fortalezas}
+
+En el ámbito de la predicción de riesgo cardiovascular mediante registros médicos electrónicos (EHR), el estándar empírico actual ha transitado de los modelos estadísticos tradicionales hacia los algoritmos de aprendizaje automático clásico o ``tabular'', destacando los métodos de ensamblaje basados en árboles (Random Forest, XGBoost, LightGBM) y las Máquinas de Vectores de Soporte (SVM) \cite{li2023evaluating, davoudi2024fairness}. La fortaleza principal de estas técnicas radica en su capacidad para ingerir datos estructurados de alta dimensionalidad y capturar fenotipos cardiovasculares complejos sin requerir la especificación manual de términos de interacción \cite{foryciarz2022evaluating}. Mientras que la regresión logística clásica asume una relación log-lineal restrictiva, algoritmos como Random Forest reducen la varianza mediante remuestreo (\textit{bagging}), y arquitecturas como XGBoost manejan de forma nativa la ausencia masiva de datos clínicos sin depender de imputaciones artificiales \cite{li2023evaluating}. La evidencia empírica confirma que estos ensamblajes incrementan consistentemente la capacidad de discriminación (AUROC) frente a las líneas base clínicas tradicionales \cite{cho2021preexisting}.
+
+\subsubsection{Supuestos operativos y limitaciones técnicas}
+
+A pesar de su superioridad predictiva, la literatura advierte sobre límites matemáticos y supuestos operativos severos al implementar estas técnicas en la salud pública. El primer supuesto crítico es que estos modelos operan bajo el principio de Minimización del Riesgo Empírico (ERM), optimizando sus fronteras de decisión para reducir el error promedio sobre el conjunto de datos global \cite{pfohl2021empirical}. Esta mecánica asume implícitamente que los datos son representativos, lo cual constituye su mayor limitación: al ser intrínsecamente agnósticos a los mecanismos sociológicos, los algoritmos tabulares absorben el ruido estructural y subestiman sistemáticamente el riesgo en subpoblaciones marginadas, amplificando la disparidad demográfica \cite{pfohl2022comparison}. Esta brecha no se limita a Estados Unidos: el estudio LASI en India \cite{lee2025evaluating} documenta un patrón similar en función de casta y nivel socioeconómico.
+
+\subsubsection{La paradoja de la equidad y la calibración}
+
+Finalmente, un límite documentado en las arquitecturas tabulares contemporáneas es la incompatibilidad matemática entre la optimización de equidad grupal y la utilidad clínica \cite{foryciarz2022evaluating}. Intentar mitigar las disparidades de los modelos de ensamblaje alterando su función de pérdida para forzar métricas como los Odds Igualados provoca una descalibración patológica de las probabilidades predichas \cite{foryciarz2022evaluating}. Dado que las guías cardiológicas prescriben tratamientos basados en umbrales de riesgo absoluto estrictos, la literatura concluye que modificar paramétricamente estos algoritmos tabulares durante su entrenamiento deteriora la precisión global (fenómeno de ``nivelación hacia abajo'') y resulta incompatible con la seguridad clínica del paciente \cite{pfohl2021empirical, foryciarz2022evaluating}.
+
+\subsection{Eje C (El Dataset)}
+% TODO: desarrollar el Eje C.
+\subsection{Tabla Comparativa}
+
+\begin{table*}[t]
+\centering
+\caption{Comparativa de artículos relacionados}
+\label{tab:comparativa}
+\small
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{@{}p{1.6cm}p{0.6cm}p{2.3cm}p{2.5cm}p{2.1cm}p{2.3cm}p{2.9cm}@{}}
+\toprule
+\textbf{Ref.} & \textbf{Año} & \textbf{Técnica} & \textbf{Dataset / Cohorte} & \textbf{Métrica Principal} & \textbf{Mejor Resultado} & \textbf{Limitación} \\
+\midrule
+Li et al. \cite{li2023evaluating} & 2023 & RF, XGBoost, LR, PCE & VUMC EHR ($N=109\,490$) & AUC, EOD, DI & RF AUC: 0.771 (PCE: 0.730) & Mitigación estándar degrada precisión general. \\
+Davoudi et al. \cite{davoudi2024fairness} & 2024 & LightGBM, XGBoost, AutoGluon & VNS Health ($N=12\,189$) & AUC, Equal Opportunity & Ensamble AUC: 0.89 & Disparidad severa en subgrupos interseccionales. \\
+Foryciarz et al. \cite{foryciarz2022evaluating} & 2022 & PCE (LR), modelos restringidos & ARIC y cohortes agrupadas & Calibración (7.5\%), FPR, FNR & Unconstrained AUC: $\sim$0.76 & Forzar Equalized Odds destruye la calibración clínica. \\
+Cho et al. \cite{cho2021preexisting} & 2021 & LR, RF, AdaBoost, NN & Cohorte Corea ($N=222\,998$) & C-Statistic (AUROC) & Modelos tabulares AUC: 0.751 & Cohorte homogénea sin validación externa diversa. \\
+Pfohl et al. \cite{pfohl2021empirical} & 2021 & LR, Árboles de Decisión & Múltiples EHR observacionales & AUROC disp., Calibración, MAE & Modelos sin restricciones óptimos & Leveling down: paridad degrada precisión global. \\
+Pfohl et al. \cite{pfohl2022comparison} & 2022 & ERM, DRO, Submuestreo & 3 bases de datos EHR independientes & Worst-case AUROC, AUPRC & ERM baseline AUC $>$ 0.82 & Ruido en etiquetas y bajo tamaño muestral efectivo. \\
+Lee et al. \cite{lee2025evaluating} & 2025 & RF, XGBoost, LightGBM, LR & Cohorte LASI ($N>55\,000$) & AUROC, Precisión, Eq. Odds & LightGBM / GBT AUC: 0.80 & Brechas persistentes en castas y bajo nivel socioeconómico. \\
+\bottomrule
+\end{tabular}
+
+\vspace{2pt}
+\footnotesize{\textit{Nota: se muestran 7 de los 21 artículos requeridos a modo de referencia de formato; completar la tabla con los 14 artículos restantes siguiendo la misma estructura de columnas.}}
+\end{table*}
+
+\FloatBarrier
+
+\subsection{Brechas de Literatura}
+% TODO: desarrollar el apartado de brechas.
+
+\section{Baseline de Literatura}
+
+Con base en la revisión de literatura sobre modelos tabulares aplicados a datos cardiovasculares, se establece como meta principal alcanzar o superar un área bajo la curva ROC (\textbf{AUROC}) entre \textbf{0.751 y 0.771} \cite{li2023evaluating, cho2021preexisting}. Este rango corresponde a los resultados reportados por Cho et al. (2021) y Li et al. (2023) al evaluar ensamblajes como Random Forest y Gradient Boosting sobre registros clínicos.
+
+De forma complementaria, como línea base de la evaluación de imparcialidad de los algoritmos, se busca reducir la disparidad en la tasa de falsos positivos y en la Diferencia de Igualdad de Oportunidades (\textit{Equal Opportunity Difference}) entre hombres y mujeres en al menos un 50\% respecto a los modelos basales sin calibrar. Esta meta toma como referencia a Li et al. (2023) \cite{li2023evaluating}, quienes reportan una reducción del 57\% en la Diferencia de Igualdad de Oportunidades al comparar Random Forest frente a regresión logística; se plantea un 50\% como meta para este proyecto.
+
+\section{Metodología Propuesta}
+
+\begin{itemize}
+  \item \textbf{Definición del Problema:} El proyecto se plantea como un problema de clasificación binaria supervisada. El modelo tomará variables clínicas y hábitos del paciente para predecir si tiene o no riesgo cardiovascular, analizando al mismo tiempo si la tasa de error (particularmente los falsos positivos) varía de forma sistemática según género y raza/etnicidad del paciente, dos ejes en los que el análisis exploratorio inicial ya reveló disparidades significativas.
+
+  \item \textbf{Partición de Datos:} Para evaluar el modelo sin riesgo de fuga de datos (\textit{data leakage}), se utilizará validación cruzada estratificada (\textit{Stratified K-Fold} con 5 pliegues). Esto asegura que la proporción de pacientes enfermos y sanos se mantenga idéntica en cada división.
+
+  \item \textbf{Pipeline de Preprocesamiento:} Las transformaciones de datos (como rellenar valores faltantes, codificar categorías o normalizar valores numéricos) se ejecutarán mediante un \textit{Pipeline} dentro de cada pliegue de entrenamiento. Así se garantiza que el conjunto de prueba nunca filtre información antes de tiempo al modelo.
+
+  \item \textbf{Manejo de Desbalance:} El análisis exploratorio inicial reveló que el dataset presenta un desbalance considerable entre clases: 88.18\% de los registros corresponden a ausencia de riesgo cardiovascular, frente a 11.82\% con presencia de riesgo (definido como historial de infarto, enfermedad coronaria, o ACV). Este desbalance se mantiene de forma similar entre géneros (13.57\% en hombres vs. 10.24\% en mujeres), pero varía de forma más notable entre grupos raciales (entre 4.39\% y 14.05\% según el grupo), lo cual es relevante para el análisis de equidad del presente estudio. Dado este desbalance, se aplicará SMOTE (u otra técnica de sobremuestreo) durante el entrenamiento, evaluando su efecto tanto en el desempeño global del modelo como en la disparidad de falsos positivos entre subgrupos demográficos.
+\end{itemize}
+
+\section{Análisis Técnico (Específico del Track A)}
+% TODO: desarrollar el análisis técnico.
+
+\section{Consideraciones Éticas Preliminares}
+% TODO: desarrollar las consideraciones éticas.
+
+\section{Declaración de Uso de IA}
+% TODO: completar la declaración de uso de IA.
+
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+\end{document}
