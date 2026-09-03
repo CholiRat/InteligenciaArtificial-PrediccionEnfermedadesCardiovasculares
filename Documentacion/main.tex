@@ -105,15 +105,30 @@ De forma complementaria, como línea base de la evaluación de imparcialidad de 
 
 \section{Metodología Propuesta}
 
-\begin{itemize}
-  \item \textbf{Definición del Problema:} El proyecto se plantea como un problema de clasificación binaria supervisada. El modelo tomará variables clínicas y hábitos del paciente para predecir si tiene o no riesgo cardiovascular, analizando al mismo tiempo si la tasa de error (particularmente los falsos positivos) varía de forma sistemática según género y raza/etnicidad del paciente, dos ejes en los que el análisis exploratorio inicial ya reveló disparidades significativas.
+\subsection{Origen de los datos}
 
-  \item \textbf{Partición de Datos:} Para evaluar el modelo sin riesgo de fuga de datos (\textit{data leakage}), se utilizará validación cruzada estratificada (\textit{Stratified K-Fold} con 5 pliegues). Esto asegura que la proporción de pacientes enfermos y sanos se mantenga idéntica en cada división.
+Para esta investigación, se utiliza el dataset \textit{Behavioral Risk Factor Surveillance System} (BRFSS) de 2024. Este obtiene sus datos de una encuesta anual de salud pública realizada por el CDC (Centers for Disease Control and Prevention). Cubre 49 estados, el Distrito de Columbia, Guam, Puerto Rico y las Islas Vírgenes de los Estados Unidos. Incluye datos demográficos, información biométrica, hábitos, condiciones médicas, acceso a salud, entre otros aspectos que permiten monitorear el estado de la población.
 
-  \item \textbf{Pipeline de Preprocesamiento:} Las transformaciones de datos (como rellenar valores faltantes, codificar categorías o normalizar valores numéricos) se ejecutarán mediante un \textit{Pipeline} dentro de cada pliegue de entrenamiento. Así se garantiza que el conjunto de prueba nunca filtre información antes de tiempo al modelo.
+Este dataset originalmente contiene 457,670 filas y 301 columnas. Para el estudio se selecciona un subconjunto de variables vitales para la predicción de riesgo cardiovascular y análisis de equidad/disparidad demográfica. Según \cite{sathyaseelan2025comparative}, la precisión y eficiencia de un modelo depende de la selección de características relevantes, incluir variables con poca relación causa sobreajuste, complejidad computacional innecesaria y menor precisión. Por este motivo, se eliminan columnas para el cálculo de valores intermedios, información sobre acceso a salud o datos familiares.
 
-  \item \textbf{Manejo de Desbalance:} El análisis exploratorio inicial reveló que el dataset presenta un desbalance considerable entre clases: 88.18\% de los registros corresponden a ausencia de riesgo cardiovascular, frente a 11.82\% con presencia de riesgo (definido como historial de infarto, enfermedad coronaria, o ACV). Este desbalance se mantiene de forma similar entre géneros (13.57\% en hombres vs. 10.24\% en mujeres), pero varía de forma más notable entre grupos raciales (entre 4.39\% y 14.05\% según el grupo), lo cual es relevante para el análisis de equidad del presente estudio. Dado este desbalance, se aplicará SMOTE (u otra técnica de sobremuestreo) durante el entrenamiento, evaluando su efecto tanto en el desempeño global del modelo como en la disparidad de falsos positivos entre subgrupos demográficos.
-\end{itemize}
+\subsection{Pipeline de Preprocesamiento}
+
+El pipeline de preprocesamiento se descompone en K etapas: Limpieza del dataset crudo y selección de columnas necesarias, conversión estándar de medidas, división del dataset en pliegues, imputación proporcional, normalización de datos mediante \textit{MinMax Scaling} y SMOTE (\textit{Synthetic Minority Over-sampling Technique}).
+
+---Crear diagrama---
+
+En la primera fase, se usará la herramienta Pandas para transformar el dataset. El enfoque será convertir los valores en la encuesta catalogados como (no sabe/rechazó responder), frecuentemente representados con un número del siete al nueve, a vacío. Asimismo, se realiza una conversión de pies a centímetros para la altura y de libras a kilogramos para el peso. Estos valores están escritos de forma no continua, pues el peso suma 9000 a la cantidad base cuando el número ya está en centímetros o kilogramos respectivamente. Este cambio resulta vital para modelos basados en distancias como SVM. Las transformaciones mencionadas no implican un riesgo sobre filtración de datos, así que se realizan antes de las particiones.
+
+El siguiente paso es la partición del dataset usando validación cruzada estratificada (Stratified K-Fold con 5 pliegues). La cantidad 5 es estándar en múltiples artículos \cite{sathyaseelan2025comparative} \cite{sheetal2026evaluating} \cite{wang2025machine}, y se utiliza para este estudio. A su vez, esta es una de las técnicas más comunes de validación. De acuerdo con un survey de modelos de predicción basados en Machine Learning para el riesgo de enfermedad cardiovascular \cite{ liu2025machine}, para la validación, 80.95\% utilizaron N-Fold Cross Validation, y dividieron el dataset entre pliegues de entrenamiento y prueba.
+
+Una vez se divide el dataset en pliegues, se busca aplicar imputación proporcional para cubrir los valores nulos presentes en el dataset. Esta técnica se ajustará según los valores existentes en cada partición del dataset, previniendo filtración de datos y asegurando que los valores utilizados reflejen la media de la población.
+
+A continuación, se implementa una normalización con MinMax Scaling a las atributos cuantitativos en una escala de 0 a 1, a nivel de partición. Nuevamente, hacerlo en esta etapa es esencial para prevenir filtración de datos con la información del dataset global. La normalización tiene el objetivo de hacer que el modelo juzgue equitativamente y evite preferencia sobre alguna columna especifica por la magnitud de sus entradas. \cite{ rawash2026study}
+
+\subsection{Manejo de Desbalance}
+
+El análisis exploratorio inicial reveló que el dataset presenta un desbalance considerable entre clases: 88.18\% de los registros corresponden a ausencia de riesgo cardiovascular, frente a 11.82\% con presencia de riesgo (definido como historial de infarto, enfermedad coronaria, o ACV). Este desbalance se mantiene de forma similar entre géneros (13.57\% en hombres vs. 10.24\% en mujeres), pero varía de forma más notable entre grupos raciales (entre 4.39\% y 14.05\% según el grupo), lo cual es relevante para el análisis de equidad del presente estudio. Dado este desbalance, se aplicará SMOTE para el balanceo de los registros.
+
 
 \section{Análisis Técnico (Específico del Track A)}
 % TODO: desarrollar el análisis técnico.
