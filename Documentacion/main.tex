@@ -103,7 +103,17 @@ Con base en la revisión de literatura sobre modelos tabulares aplicados a datos
 
 De forma complementaria, como línea base de la evaluación de imparcialidad de los algoritmos, se busca reducir la disparidad en la tasa de falsos positivos y en la Diferencia de Igualdad de Oportunidades (\textit{Equal Opportunity Difference}) entre hombres y mujeres en al menos un 50\% respecto a los modelos basales sin calibrar. Esta meta toma como referencia a Li et al. (2023) \cite{li2023evaluating}, quienes reportan una reducción del 57\% en la Diferencia de Igualdad de Oportunidades al comparar Random Forest frente a regresión logística; se plantea un 50\% como meta para este proyecto.
 
+Es importante señalar que esta comparación no es perfecta. Li et al. y Cho et al. usan registros clínicos electrónicos (EHR) de hospitales, mientras que este proyecto usa BRFSS, una encuesta telefónica autorreportada. Esto implica diferentes fuentes de error (recuerdo del paciente en vez de diagnóstico clínico) y poblaciones distintas (EE. UU. institucional vs. cohorte coreana). Por lo tanto, el rango de AUROC se toma como una referencia razonable del estado del arte y no como un objetivo exacto bajo el mismo protocolo.
+
 \section{Metodología Propuesta}
+
+\subsection{Definición del Problema}
+
+Este proyecto se plantea como un problema de clasificación binaria supervisada. La variable objetivo, a la que llamamos riesgo cardiovascular, toma el valor de 1 si la persona encuestada reporta haber tenido un infarto, una enfermedad coronaria o un accidente cerebrovascular, y el valor de 0 si no reporta ninguno de los tres. Esta variable se construye a partir de las columnas CVDINFR4, CVDCRHD4 y CVDSTRK3 del dataset BRFSS.
+
+Como variables de entrada se usan datos demográficos (edad, sexo, raza), datos antropométricos (índice de masa corporal, peso, altura), hábitos de vida (fumado, actividad física, consumo de alcohol) y otras condiciones de salud relacionadas (diabetes, salud general percibida). El sexo y la raza se usan además como atributos protegidos: aparte de ser posibles variables de entrada, sirven para comparar si el modelo se equivoca más con unos grupos que con otros.
+
+En resumen, el modelo debe predecir si una persona tiene riesgo cardiovascular a partir de estas variables, y al mismo tiempo se debe revisar si la tasa de error se mantiene parecida entre los grupos demográficos mencionados.
 
 \subsection{Origen de los datos}
 
@@ -113,9 +123,15 @@ Este dataset originalmente contiene 457,670 filas y 301 columnas. Para el estudi
 
 \subsection{Pipeline de Preprocesamiento}
 
-El pipeline de preprocesamiento se descompone en K etapas: Limpieza del dataset crudo y selección de columnas necesarias, conversión estándar de medidas, división del dataset en pliegues, imputación proporcional, normalización de datos mediante \textit{MinMax Scaling} y SMOTE (\textit{Synthetic Minority Over-sampling Technique}).
+El pipeline de preprocesamiento se descompone en K etapas: Limpieza del dataset crudo y selección de columnas necesarias, conversión estándar de medidas, división del dataset en pliegues, imputación proporcional, normalización de datos mediante \textit{MinMax Scaling} y SMOTE (\textit{Synthetic Minority Over-sampling Technique}). La Figura~\ref{fig:pipeline} resume este proceso.
 
----Crear diagrama---
+\begin{figure}[h]
+\centering
+\includegraphics[width=\columnwidth]{pipeline_diagrama.png}
+\caption{Pipeline de preprocesamiento y entrenamiento. Los pasos dentro del recuadro punteado se repiten de forma independiente para cada uno de los 5 pliegues, usando solo los datos de entrenamiento de ese pliegue, para evitar la fuga de datos.}
+\label{fig:pipeline}
+\end{figure}
+\FloatBarrier
 
 En la primera fase, se usará la herramienta Pandas para transformar el dataset. El enfoque será convertir los valores en la encuesta catalogados como (no sabe/rechazó responder), frecuentemente representados con un número del siete al nueve, a vacío. Asimismo, se realiza una conversión de pies a centímetros para la altura y de libras a kilogramos para el peso. Estos valores están escritos de forma no continua, pues el peso suma 9000 a la cantidad base cuando el número ya está en centímetros o kilogramos respectivamente. Este cambio resulta vital para modelos basados en distancias como SVM. Las transformaciones mencionadas no implican un riesgo sobre filtración de datos, así que se realizan antes de las particiones.
 
@@ -127,8 +143,61 @@ A continuación, se implementa una normalización con MinMax Scaling a las atrib
 
 \subsection{Manejo de Desbalance}
 
-El análisis exploratorio inicial reveló que el dataset presenta un desbalance considerable entre clases: 88.18\% de los registros corresponden a ausencia de riesgo cardiovascular, frente a 11.82\% con presencia de riesgo (definido como historial de infarto, enfermedad coronaria, o ACV). Este desbalance se mantiene de forma similar entre géneros (13.57\% en hombres vs. 10.24\% en mujeres), pero varía de forma más notable entre grupos raciales (entre 4.39\% y 14.05\% según el grupo), lo cual es relevante para el análisis de equidad del presente estudio. Dado este desbalance, se aplicará SMOTE para el balanceo de los registros.
+El análisis exploratorio inicial reveló que el dataset presenta un desbalance considerable entre clases: 88.18\% de los registros corresponden a ausencia de riesgo cardiovascular, frente a 11.82\% con presencia de riesgo (definido como historial de infarto, enfermedad coronaria, o ACV). Este desbalance se mantiene de forma similar entre géneros (13.57\% en hombres vs. 10.24\% en mujeres), pero varía de forma más notable entre grupos raciales (entre 4.39\% y 14.05\% según el grupo), lo cual es relevante para el análisis de equidad del presente estudio. La Figura~\ref{fig:balance} muestra este porcentaje desglosado por género y por grupo racial. Dado este desbalance, se aplicará SMOTE para el balanceo de los registros.
 
+\begin{figure}[h]
+\centering
+\includegraphics[width=\columnwidth]{balance_riesgo_grupos.png}
+\caption{Porcentaje de registros con riesgo cardiovascular por género y por grupo racial, con el promedio general del dataset como referencia.}
+\label{fig:balance}
+\end{figure}
+\FloatBarrier
+
+Antes de elegir SMOTE se consideraron otras dos formas de manejar el desbalance, siguiendo comparaciones reportadas para este mismo tipo de problema \cite{sheetal2026evaluating}. La primera es asignar un peso mayor a la clase minoritaria durante el entrenamiento (\textit{class weighting}), de modo que el modelo penalice más los errores sobre esa clase sin generar datos nuevos. La segunda es el submuestreo (\textit{undersampling}), que reduce la cantidad de registros de la clase mayoritaria hasta igualarla con la minoritaria. La Tabla~\ref{tab:balanceo} resume las ventajas y desventajas de cada técnica.
+
+\begin{table}[h]
+\centering
+\caption{Comparación de técnicas para el desbalance de clases}
+\label{tab:balanceo}
+\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{@{}p{2.0cm}p{2.5cm}p{2.5cm}@{}}
+\toprule
+\textbf{Técnica} & \textbf{Ventaja} & \textbf{Desventaja} \\
+\midrule
+SMOTE & Genera ejemplos sintéticos sin descartar datos reales & Puede crear ejemplos poco realistas si hay muy pocos datos en el grupo minoritario \\
+Class weight\-ing & No modifica los datos, solo el entrenamiento & No siempre corrige bien un desbalance muy extremo \\
+Under\-samp\-ling & Simple y rápido de aplicar & Descarta información real de la clase mayoritaria \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Se eligió SMOTE porque, a diferencia del submuestreo, no descarta información real del dataset (que ya es limitado para la clase minoritaria), y porque genera ejemplos sintéticos en vez de solo repetir registros existentes, lo cual reduce el riesgo de sobreajuste frente a un sobremuestreo simple. El uso de \textit{class weighting} queda como una alternativa a probar de forma exploratoria durante la experimentación, comparando su efecto sobre las métricas de equidad definidas en la Sección~\ref{subsec:metricas} contra el de SMOTE.
+
+\subsection{Estrategia de Modelado}
+
+Según la revisión de la literatura presentada en la Sección~II-B, los modelos tabulares que consistentemente reportan mejor desempeño para la predicción de riesgo cardiovascular sobre datos de encuestas o registros clínicos son los ensamblajes basados en árboles, en particular Random Forest y XGBoost \cite{li2023evaluating, davoudi2024fairness, lee2025evaluating}. Por esta razón, estos dos algoritmos serán los modelos principales a evaluar en este proyecto.
+
+Como línea base interpretable se incluye además Regresión Logística (LR), siguiendo el mismo enfoque de comparación usado en varios de los trabajos revisados \cite{foryciarz2022evaluating, pfohl2021empirical, pfohl2022comparison}, donde un modelo lineal simple sirve de referencia para medir qué tanto aportan los modelos más complejos, tanto en desempeño como en equidad entre grupos.
+
+Se incluye además una Máquina de Vectores de Soporte (SVM), otra técnica clásica destacada en la Sección~II-B para este dominio \cite{li2023evaluating, davoudi2024fairness}. A diferencia de los árboles de decisión, SVM es sensible a la escala de las variables, lo cual justifica la normalización aplicada en el pipeline (Sección~IV-C). Teniendo en cuenta la cantidad de datos, se optará por un kernel lineal o una solución escalable como  \textit{LinearSVC} para mantener los tiempos de entrenamiento bajo control.
+
+Los cuatro modelos (LR, Random Forest, XGBoost y SVM) se entrenarán y evaluarán bajo el mismo pipeline y las mismas métricas descritas en esta sección, y se compararán entre sí tanto en AUROC como en las métricas de equidad definidas más adelante. El objetivo no es solo identificar el modelo con mejor desempeño general, sino observar si los modelos más complejos, que suelen ganar en AUROC, también mantienen (o empeoran) la disparidad entre grupos demográficos frente al modelo lineal simple, tal como reportan Li et al. \cite{li2023evaluating} al comparar Random Forest contra regresión logística.
+
+\subsection{Métricas de Evaluación}
+\label{subsec:metricas}
+
+Para medir qué tan bien funciona el modelo en general, se usará el área bajo la curva ROC (AUROC). Esta métrica indica qué tan bien el modelo distingue entre personas con y sin riesgo cardiovascular, sin depender de un único umbral de decisión. Se eligió como métrica principal porque es la misma que reportan la mayoría de los trabajos revisados en la Sección~II, lo que permite comparar los resultados de este proyecto contra la literatura (ver Sección~III).
+
+Para medir la equidad del modelo entre grupos demográficos (sexo y raza) se usarán tres métricas adicionales:
+
+\begin{itemize}
+\item \textbf{Diferencia de Igualdad de Oportunidades (\textit{Equal Opportunity Difference}, EOD):} diferencia en la tasa de verdaderos positivos entre grupos. Un valor cercano a 0 indica que el modelo detecta el riesgo real con una efectividad parecida en todos los grupos.
+\item \textbf{Disparidad en la tasa de falsos positivos (FPR):} diferencia en la proporción de personas sin riesgo real que el modelo clasifica por error como en riesgo, comparando entre grupos.
+\item \textbf{Calibración por grupo:} si el modelo predice, por ejemplo, un 20\% de probabilidad de riesgo, se revisa que cerca del 20\% de las personas de ese grupo con esa predicción sí tengan riesgo real.
+\end{itemize}
+
+Estas cuatro métricas se calcularán sobre el conjunto de prueba de cada uno de los 5 pliegues de la validación cruzada, y se reportará el promedio y la variación entre pliegues para tener una idea de qué tan estables son los resultados.
 
 \section{Análisis Técnico (Específico del Track A)}
 % TODO: desarrollar el análisis técnico.

@@ -4,6 +4,21 @@ Este proyecto se enfoca en la predicción de enfermedades cardiovasculares utili
 
 Adicionalmente, el repositorio incluye un documento formal elaborado en LaTeX que contiene la documentación del proyecto y sus respectivas bibliografías.
 
+## Estructura del repositorio
+
+- `Dataset/`: dataset limpio (`brfss_2024_cvd_fairness_clean.csv`).
+- `scripts/`: scripts de extracción, análisis exploratorio y generación de figuras.
+- `Documentacion/`: artículo en LaTeX (`main.tex`), referencias y figuras.
+
+## Cómo correr los scripts
+
+```bash
+pip install -r requirements.txt
+cd scripts
+python balance_check.py              # desbalance de clases por género y raza
+python gen_balance_chart.py          # regenera la Figura 2 del paper
+```
+
 ## Integrantes
 
 - Daniel de Jesús Alemán Ruiz | 2023051957 
