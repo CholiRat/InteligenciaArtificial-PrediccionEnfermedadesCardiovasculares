@@ -11,6 +11,8 @@
 \usepackage{array}
 \usepackage{booktabs}
 \usepackage{placeins}
+\usepackage{setspace}
+\onehalfspacing
 
 \begin{document}
 
@@ -65,7 +67,15 @@ A pesar de su superioridad predictiva, la literatura advierte sobre límites mat
 Finalmente, un límite documentado en las arquitecturas tabulares contemporáneas es la incompatibilidad matemática entre la optimización de equidad grupal y la utilidad clínica \cite{foryciarz2022evaluating}. Intentar mitigar las disparidades de los modelos de ensamblaje alterando su función de pérdida para forzar métricas como los Odds Igualados provoca una descalibración patológica de las probabilidades predichas \cite{foryciarz2022evaluating}. Dado que las guías cardiológicas prescriben tratamientos basados en umbrales de riesgo absoluto estrictos, la literatura concluye que modificar paramétricamente estos algoritmos tabulares durante su entrenamiento deteriora la precisión global (fenómeno de ``nivelación hacia abajo'') y resulta incompatible con la seguridad clínica del paciente \cite{pfohl2021empirical, foryciarz2022evaluating}.
 
 \subsection{Eje C (El Dataset)}
-% TODO: desarrollar el Eje C.
+
+El dataset empleado es el BRFSS (Behavioral Risk Factor Surveillance System) 2024, con 457,670 filas y 301 columnas. Los datos provienen de una encuesta anual de salud pública en Estados Unidos realizada por el CDC (Centers for Disease Control and Prevention). 
+
+Se revisaron cinco artículos relevantes para el dataset utilizado, de ellos tres usan el mismo dataset de BRFSS \cite{imani2026predicting}, \cite{islam2026leakage}, \cite{farquhar2026persistent} únicamente variando el año (2022, 2024 y 2024 respectivamente). Los demás tratan los datasets \textit{Cardiovascular Disease dataset de Kaggle} \cite{dritsas2023efficient}, y un conjunto de cohortes combinadas actualizado, que incluye seis estudios de investigación cardiovascular (ARIC, CARDIA, CHS, FHS Offspring, MESA y JHS) \cite{li2023evaluating}.
+
+Los artículos que comparten el mismo dataset de esta investigación no son directamente comparables, tienen diferencias importantes. Para empezar, el BFRSS 2022 \cite{imani2026predicting}, varía en el número de registros, con solo 221,643 participantes. En cuanto al paper de investigación \cite{farquhar2026persistent}, su foco es la detección del VIH. A pesar de esto, se agrega porque aborda temas de salud pública sobre la misma población y lleva a conclusiones sobre la discriminación de los modelos de \textit{Machine Learning}. Por último, ninguno de los artículos coincide con el número de columnas previsto para esta investigación, ya que omiten o no mencionan el uso de preprocesamiento para la limpieza de valores innecesarios.
+
+Las publicaciones que difieren en datos tienen una clara limitación sobre la precisión de los valores obtenidos. El dataset de Kaggle \cite{dritsas2023efficient} carece de características demográficas que permiten el cálculo de falsos positivos sobre el sexo y la raza, pero comparte columnas con el dataset seleccionado. Por el contrario, el conjunto de cohortes dado por \cite{li2023evaluating} resulta pertinente por la inclusión de métricas de EOD (\textit{Equal Opportunity Difference}), además de que trata con la predicción de riesgo cardiovascular.
+
 \subsection{Tabla Comparativa}
 
 \begin{table*}[t]
@@ -84,12 +94,15 @@ Foryciarz et al. \cite{foryciarz2022evaluating} & 2022 & PCE (LR), modelos restr
 Cho et al. \cite{cho2021preexisting} & 2021 & LR, RF, AdaBoost, NN & Cohorte Corea ($N=222\,998$) & C-Statistic (AUROC) & Modelos tabulares AUC: 0.751 & Cohorte homogénea sin validación externa diversa. \\
 Pfohl et al. \cite{pfohl2021empirical} & 2021 & LR, Árboles de Decisión & Múltiples EHR observacionales & AUROC disp., Calibración, MAE & Modelos sin restricciones óptimos & Leveling down: paridad degrada precisión global. \\
 Pfohl et al. \cite{pfohl2022comparison} & 2022 & ERM, DRO, Submuestreo & 3 bases de datos EHR independientes & Worst-case AUROC, AUPRC & ERM baseline AUC $>$ 0.82 & Ruido en etiquetas y bajo tamaño muestral efectivo. \\
-Lee et al. \cite{lee2025evaluating} & 2025 & RF, XGBoost, LightGBM, LR & Cohorte LASI ($N>55\,000$) & AUROC, Precisión, Eq. Odds & LightGBM / GBT AUC: 0.80 & Brechas persistentes en castas y bajo nivel socioeconómico. \\
+Lee et al. \cite{lee2025evaluating} & 2025 & RF, XGBoost, LightGBM, LR & Cohorte LASI ($N>55\,000$) & AUROC, Precisión, EOD & LightGBM / GBT AUC: 0.80 & Brechas persistentes en castas y bajo nivel socioeconómico. \\
+Imani et al. \cite{imani2026predicting} & 2026 & XGBoost, RF, Logistic Regression, Naive Bayes & BRFSS 2022 (N = 221,643) & Accuracy, AUROC, F1-Score, Sensitivity & XGBoost: 0.94\% AUROC & Disparidad significativa según grupo sociodemográfico. \\
+Islam et al. \cite{islam2026leakage} & 2026 & Dual-branch FT-Transformer architecture & BRFSS 2024 (N>450,000) & F1-Score, Sensitivity, FNR & Disminución del 50\% en FNR &  Falta de validación en datasets clínicos externos. \\
+Farquhar \cite{farquhar2026persistent} & 2026 & Logistic Regression, RF, Gradient Boost, XGBoost & BRFSS 2024 (N = 386,775) & DPD, EOD & DPD de 0.154–0.169 y EOD 0.565-0.669 entre todos los modelos. & Subrepresentación de poblaciones sin acceso estable a teléfono en el dataset. \\
+Dritsas, Trigka \cite{dritsas2023efficient} & 2023 & SVM, Gradient Boosting, RF, NB, Logistic Regression, Stacking ensemble. & Cardiovascular Disease Dataset en Kaggle & Accuracy, Sensitivity, Precision, AUC & Stacking ensemble AUC: 98,2\% Accuracy: 86,5\% & Falta de características adicionales relevantes \\
+
 \bottomrule
 \end{tabular}
 
-\vspace{2pt}
-\footnotesize{\textit{Nota: se muestran 7 de los 21 artículos requeridos a modo de referencia de formato; completar la tabla con los 14 artículos restantes siguiendo la misma estructura de columnas.}}
 \end{table*}
 
 \FloatBarrier
@@ -117,13 +130,13 @@ En resumen, el modelo debe predecir si una persona tiene riesgo cardiovascular a
 
 \subsection{Origen de los datos}
 
-Para esta investigación, se utiliza el dataset \textit{Behavioral Risk Factor Surveillance System} (BRFSS) de 2024. Este obtiene sus datos de una encuesta anual de salud pública realizada por el CDC (Centers for Disease Control and Prevention). Cubre 49 estados, el Distrito de Columbia, Guam, Puerto Rico y las Islas Vírgenes de los Estados Unidos. Incluye datos demográficos, información biométrica, hábitos, condiciones médicas, acceso a salud, entre otros aspectos que permiten monitorear el estado de la población.
+Para esta investigación, se utiliza el dataset \textit{Behavioral Risk Factor Surveillance System} (BRFSS) de 2024. Este obtiene sus datos de una encuesta anual de salud pública realizada por el CDC (Centers for Disease Control and Prevention). Cubre 50 estados, el Distrito de Columbia, Guam, Puerto Rico y las Islas Vírgenes de los Estados Unidos. Incluye datos demográficos, información biométrica, hábitos, condiciones médicas, acceso a salud, entre otros aspectos que permiten monitorear el estado de la población.
 
 Este dataset originalmente contiene 457,670 filas y 301 columnas. Para el estudio se selecciona un subconjunto de variables vitales para la predicción de riesgo cardiovascular y análisis de equidad/disparidad demográfica. Según \cite{sathyaseelan2025comparative}, la precisión y eficiencia de un modelo depende de la selección de características relevantes, incluir variables con poca relación causa sobreajuste, complejidad computacional innecesaria y menor precisión. Por este motivo, se eliminan columnas para el cálculo de valores intermedios, información sobre acceso a salud o datos familiares.
 
 \subsection{Pipeline de Preprocesamiento}
 
-El pipeline de preprocesamiento se descompone en K etapas: Limpieza del dataset crudo y selección de columnas necesarias, conversión estándar de medidas, división del dataset en pliegues, imputación proporcional, normalización de datos mediante \textit{MinMax Scaling} y SMOTE (\textit{Synthetic Minority Over-sampling Technique}). La Figura~\ref{fig:pipeline} resume este proceso.
+El pipeline de preprocesamiento se descompone en seis etapas: Limpieza del dataset crudo y selección de columnas necesarias, conversión estándar de medidas, división del dataset en pliegues, imputación proporcional, normalización de datos mediante \textit{MinMax Scaling} y SMOTE (\textit{Synthetic Minority Over-sampling Technique}). La Figura~\ref{fig:pipeline} resume este proceso.
 
 \begin{figure}[h]
 \centering
