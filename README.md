@@ -17,6 +17,7 @@ pip install -r requirements.txt
 cd scripts
 python balance_check.py              # desbalance de clases por género y raza
 python gen_balance_chart.py          # regenera la Figura 2 del paper
+python gen_missing_values_chart.py   # regenera la Figura 4 del paper
 ```
 
 ## Integrantes

@@ -61,9 +61,9 @@ La evidencia empírica reciente confirma que el sesgo algorítmico en salud es u
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=\columnwidth]{fuentes de sesgo.png}
+    \includegraphics[width=\columnwidth]{fuentes_de_sesgo.png}
     \caption{Taxonomía de fuentes de sesgo algorítmico en salud según la etapa del ciclo de vida del modelo (recolección de datos, definición de variables, arquitectura/entrenamiento, despliegue). El recuadro punteado ilustra un caso donde la auditoría explícita de equidad evitó el sesgo, en contraste con la ausencia de auditoría documentada en la etapa de despliegue.}
-    \label{fig:placeholder}
+    \label{fig:fuentes_sesgo}
 \end{figure}
 
 \subsubsection{Marcos y esfuerzos de mitigación a nivel de dominio}
@@ -73,6 +73,7 @@ A nivel de dominio se han propuesto marcos para anticipar el sesgo antes del des
 \subsubsection{Qué está resuelto y qué sigue abierto}
 
 Pese a estos avances, la adopción sistemática de principios de equidad en estudios clínicos sigue siendo escasa. Huang et al. \cite{huang2022evaluation} revisaron 12 estudios de sesgo racial en ML clínico: el 67\% confirmó sesgo, pero solo el 17\% evaluó mitigación con comparación contra un modelo base, lo que atribuyen a la escasa disponibilidad de datos y al reporte deficiente de los modelos. Esta brecha se extiende más allá del aprendizaje supervisado: Adouani et al. \cite{adouani2026rethinking} muestran que la equidad en aprendizaje no supervisado en salud carece de definiciones y métricas consensuadas. En conjunto, la evaluación sistemática de equidad mediante métricas explícitas, el enfoque que este proyecto adopta para BRFSS 2024, sigue siendo la excepción y no la norma en la literatura clínica.
+
 
 \subsection{Eje B: Las Técnicas}
 
@@ -98,18 +99,31 @@ Los artículos que comparten el mismo dataset de esta investigación no son dire
 
 Las publicaciones que difieren en datos tienen una clara limitación sobre la precisión de los valores obtenidos. El dataset de Kaggle \cite{dritsas2023efficient} carece de características demográficas que permiten el cálculo de falsos positivos sobre el sexo y la raza, pero comparte columnas con el dataset seleccionado. Por el contrario, el conjunto de cohortes dado por \cite{li2023evaluating} resulta pertinente por la inclusión de métricas de EOD (\textit{Equal Opportunity Difference}), además de que trata con la predicción de riesgo cardiovascular.
 
+Al revisar los resultados de estas investigaciones, se puede extraer los mejores resultados encontrados. El paper \cite{imani2026predicting} obtiene su AUC más alto al manejar técnicas SMOTE. XGBoost consigue 0.94 AUC, seguido de Random Forest con 0.87 de AUC. Además, encuentra que las características a las que se dieron más importancia fueron: Sexo masculino, edad superior a los 65 años, diagnóstico de diabetes, enfermedades renales, situación laboral y aislamiento social. Después, se tiene que \cite{islam2026leakage} alcanza el mejor rendimiento usando LightGBM con 0.8541 AUC. A su vez, obtuvo un FPR de 0.0108, sin embargo, al utilizar datos no balanceados, el modelo detecta una gran cantidad de \textit{False Negatives}. \cite{dritsas2023efficient} se centra en los beneficios de aplicar SMOTE para el balanceo de datos. Al utilizarlo, el resultado más alto que presenta el estudio es 0.982 AUC con Stacking Ensemble, seguido de 0.878 AUC con Random Forest.
+
+Otras conclusiones pertinentes son las vinculadas a la equidad del modelo. La investigación \cite{farquhar2026persistent} encuentra un rango DPD de 0.154–0.169 y EOD de 0.565-0.669 entre todos los modelos probados. Indica que el valor de EOD es cinco veces más alto de lo aceptable. También, muestra que  al aplicar métodos fairness-aware al dataset, es posible una reducción sustancial del DPD hasta 0.029–0.054 sin perjudicar Accuracy. Mientras tanto, el estudio de \cite{li2023evaluating} expone un EOD promedio de 0.001 a 0.018 al comparar grupos raciales y 0.131 a 0.136 entre género masculino y femenino.
+
+De lo anterior, se extrae que Stacking Ensemble fue el modelo más preciso con 0.982 AUC. Random Forest ha sido el más consistente entre las distintas literaturas, posicionándose en segundo lugar en varios artículos. \cite{li2023evaluating} tiene una métrica ideal de EOD con 0.001-0.018 cuando se trata con grupos raciales, sin embargo, solo compara población blanca y negra. En cuanto a EOD entre sexo masculino y femenino, 0.131 a 0.136 es el número más bajo que se logró conseguir. 
+
 \subsection{Tabla Comparativa}
 
 \begin{table*}[t]
 \centering
 \caption{Comparativa de artículos relacionados}
 \label{tab:comparativa}
-\small
-\renewcommand{\arraystretch}{1.3}
-\begin{tabular}{@{}p{1.6cm}p{0.6cm}p{2.3cm}p{2.5cm}p{2.1cm}p{2.3cm}p{2.9cm}@{}}
+\scriptsize
+\renewcommand{\arraystretch}{0.92}
+\begin{tabular}{@{}p{1.5cm}p{0.5cm}p{2.8cm}p{2.4cm}p{2.0cm}p{2.3cm}p{3.0cm}@{}}
 \toprule
 \textbf{Ref.} & \textbf{Año} & \textbf{Técnica} & \textbf{Dataset / Cohorte} & \textbf{Métrica Principal} & \textbf{Mejor Resultado} & \textbf{Limitación} \\
 \midrule
+Zhang y Zhang \cite{zhang2023ethics} & 2023 & Marco conceptual: taxonomía de sesgo y gobernanza & N/A (marco teórico) & N/A & 5 factores de confiabilidad; gobernanza en 3 niveles & Sin validación empírica sobre un dataset propio \\
+Obra et al. \cite{obra2025potential} & 2025 & Revisión sistemática de instrumentos clínicos & 690 instrumentos de decisión clínica & Representatividad demográfica & Sobrerrepresentación de participantes/investigadores blancos y varones & No cuantifica el impacto en el desempeño de los modelos \\
+Abulibdeh et al. \cite{abulibdeh2026integration} & 2026 & Transformers para NLP clínico con \textit{fairness-awareness} & Texto clínico (notas) & TPR por grupo racial & Arquitectura alineada a la nota clínica reduce disparidad de TPR & Mitigación no uniforme entre arquitecturas \\
+Hourmozdi et al. \cite{hourmozdi2025evaluating} & 2025 & 4 modelos predictivos (detección de amiloidosis) & Pacientes evaluados por amiloidosis cardíaca & Igualdad de Oportunidades & Mejor modelo cumplió igualdad de oportunidades para raza negra & Resultado positivo no generalizable a otros contextos \\
+Agarwal et al. \cite{agarwal2023addressing} & 2023 & Marco técnico de mitigación de sesgo en 4 etapas & Caso: proxy de costo de atención & N/A & Marco para anticipar sesgo antes del despliegue clínico & Basado en casos documentados, sin validación cuantitativa propia \\
+Huang et al. \cite{huang2022evaluation} & 2022 & Revisión sistemática (\textit{scoping review}) & 12 estudios de sesgo racial en ML clínico & \% de estudios con mitigación evaluada & 67\% confirmó sesgo; solo 17\% evaluó mitigación con modelo base & Escasa disponibilidad de datos y reporte deficiente \\
+Adouani et al. \cite{adouani2026rethinking} & 2026 & Revisión metodológica (\textit{scoping review}) & Aprendizaje no supervisado en salud & N/A (sin métricas consensuadas) & Identifica ausencia de definiciones y métricas de equidad consensuadas & Área emergente sin marco de evaluación estandarizado \\
 Li et al. \cite{li2023evaluating} & 2023 & RF, XGBoost, LR, PCE & VUMC EHR ($N=109\,490$) & AUC, EOD, DI & RF AUC: 0.771 (PCE: 0.730) & Mitigación estándar degrada precisión general. \\
 Davoudi et al. \cite{davoudi2024fairness} & 2024 & LightGBM, XGBoost, AutoGluon & VNS Health ($N=12\,189$) & AUC, Equal Opportunity & Ensamble AUC: 0.89 & Disparidad severa en subgrupos interseccionales. \\
 Foryciarz et al. \cite{foryciarz2022evaluating} & 2022 & PCE (LR), modelos restringidos & ARIC y cohortes agrupadas & Calibración (7.5\%), FPR, FNR & Unconstrained AUC: $\sim$0.76 & Forzar Equalized Odds destruye la calibración clínica. \\
@@ -119,8 +133,13 @@ Pfohl et al. \cite{pfohl2022comparison} & 2022 & ERM, DRO, Submuestreo & 3 bases
 Lee et al. \cite{lee2025evaluating} & 2025 & RF, XGBoost, LightGBM, LR & Cohorte LASI ($N>55\,000$) & AUROC, Precisión, EOD & LightGBM / GBT AUC: 0.80 & Brechas persistentes en castas y bajo nivel socioeconómico. \\
 Imani et al. \cite{imani2026predicting} & 2026 & XGBoost, RF, Logistic Regression, Naive Bayes & BRFSS 2022 (N = 221,643) & Accuracy, AUROC, F1-Score, Sensitivity & XGBoost: 0.94\% AUROC & Disparidad significativa según grupo sociodemográfico. \\
 Islam et al. \cite{islam2026leakage} & 2026 & Dual-branch FT-Transformer architecture & BRFSS 2024 (N>450,000) & F1-Score, Sensitivity, FNR & Disminución del 50\% en FNR &  Falta de validación en datasets clínicos externos. \\
-Farquhar \cite{farquhar2026persistent} & 2026 & Logistic Regression, RF, Gradient Boost, XGBoost & BRFSS 2024 (N = 386,775) & DPD, EOD & DPD de 0.154–0.169 y EOD 0.565-0.669 entre todos los modelos. & Subrepresentación de poblaciones sin acceso estable a teléfono en el dataset. \\
-Dritsas, Trigka \cite{dritsas2023efficient} & 2023 & SVM, Gradient Boosting, RF, NB, Logistic Regression, Stacking ensemble. & Cardiovascular Disease Dataset en Kaggle & Accuracy, Sensitivity, Precision, AUC & Stacking ensemble AUC: 98,2\% Accuracy: 86,5\% & Falta de características adicionales relevantes \\
+Farquhar \cite{farquhar2026persistent} & 2026 & Logistic Regression, RF, Gradient Boost, XGBoost & BRFSS 2024 (N = 386,775) & DPD, EOD & DPD de 0.029–0.054 y EOD 0.565-0.669 entre todos los modelos. & Subrepresentación de poblaciones sin acceso estable a teléfono en el dataset. \\
+Dritsas \& Trigka \cite{dritsas2023efficient} & 2023 & SVM, Gradient Boosting, RF, NB, Logistic Regression, Stacking ensemble. & Cardiovascular Disease Dataset en Kaggle & Accuracy, Sensitivity, Precision, AUC & Stacking ensemble AUC: 98,2\% Accuracy: 86,5\% con SMOTE & Falta de características adicionales relevantes \\
+Sathyaseelan \& Sarathambekai \cite{sathyaseelan2025comparative} & 2025 & Logistic Regression, Naïve Bayes, RF, KNN, Árboles de Decisión, SVM, XGBoost, LightGBM & Cardiovascular Disease Dataset en Kaggle & Accuracy & LightGBM: 96.72\% Accuracy & Tamaño de dataset relativamente pequeño. \\
+Sheetal et al. \cite{sheetal2026evaluating} & 2025 & SVC, Árboles de Decisión, RF, KNN, Neural Network & Framingham Heart Study dataset & Accuracy, Precision, Sensitivity, F1-Score & RF: 91\% Accuracy & Mal rendimiento en la predicción de clases minoritarias por el desbalance de datos. \\
+Wang et al. \cite{wang2025machine} & 2025 & Survey & Survey & AUC & Neural Network: 0.87 AUC & Falta de pruebas en entornos externos y clínicos en los modelos actuales. \\
+Liu et al. \cite{liu2025machine} & 2025 & Survey & NHIS-HEALS & AUC & RF: 0.865 (95\% CI: 0.812–0.917) AUC & Dificultad de comparación directa entre todos los estudios por conjuntos de variables, hiperparámetros y software distinto. \\
+Rawash et al. \cite{rawash2026study} & 2026 & RF, XGBoost, KNN, GaussianNB & Framingham Heart Disease, Indicators of Heart Disease Dataset, Cleveland Heart Disease & Accuracy, Sensitivity, Precision, AUC, F1-Score, Specificity & XGBoost: 97.39\% AUC & Falta de explicabilidad sobre las decisiones que toma el modelo. \\
 
 \bottomrule
 \end{tabular}
@@ -251,7 +270,7 @@ Las 33 variables del dataset se agrupan en cinco categorías: demografía y vari
     \centering
     \includegraphics[width=\columnwidth]{valores_faltantes.png}
     \caption {Porcentaje de valores faltantes por variable, sobre los 457,670 registros originales del dataset. \texttt{\_INCOMG1} se resalta por concentrar la mayor proporción de datos faltantes (19.10\%), relevante para el análisis de equidad al ser uno de los atributos protegidos del estudio.}
-    \label{fig:placeholder}
+    \label{fig:valores_faltantes}
 \end{figure}
 
 Adicionalmente, se identificó un problema de calidad de datos no documentado en el README original: 6 registros presentan valores de \texttt{HEIGHT3} superiores a 250~cm (máximo observado: 815~cm), fisiológicamente imposibles, probablemente originados por un residuo de la conversión pies/pulgadas a centímetros del archivo fuente del CDC. Estos registros serán recodificados a valor faltante antes de la imputación, en lugar de tratarse como \textit{outliers} estadísticos.
@@ -276,7 +295,10 @@ Las tres variables que componen la etiqueta objetivo (\texttt{CVDINFR4}, \texttt
 % TODO: desarrollar las consideraciones éticas.
 
 \section{Declaración de Uso de IA}
-% TODO: completar la declaración de uso de IA.
+
+El equipo utilizó un asistente de inteligencia artificial (LLM) como apoyo en tareas puntuales, nunca como sustituto de la investigación ni de las decisiones técnicas del proyecto. Concretamente, se usó para: dar formato al documento en LaTeX y depurar errores de compilación (estructura de tablas y figuras, referencias cruzadas); generar el código en Python de las figuras descriptivas a partir de datos ya calculados por el equipo (pipeline de preprocesamiento, distribución del riesgo por grupo demográfico, porcentaje de valores faltantes); y revisar la redacción de algunas secciones para mejorar claridad y consistencia con el resto del documento.
+
+La búsqueda, lectura y selección de la literatura citada, las decisiones de diseño metodológico y la interpretación de los resultados fueron realizadas por los autores. Todo contenido generado o sugerido por la herramienta fue revisado y verificado manualmente por al menos un integrante del equipo antes de incorporarse al documento final.
 
 \bibliographystyle{IEEEtran}
 \bibliography{references}
