@@ -50,7 +50,29 @@ Cartago, Costa Rica\\
 \section{Trabajos Relacionados}
 
 \subsection{Eje A (El Problema)}
-% TODO: desarrollar el Eje A.
+
+\subsubsection{Evolución del problema y factores de riesgo}
+
+El uso de inteligencia artificial (IA) en el ámbito médico ha crecido de forma acelerada, pasando de sistemas basados en reglas a modelos de aprendizaje automático y aprendizaje profundo aplicados a imágenes médicas, predicción de riesgo y apoyo a la decisión clínica. Zhang y Zhang \cite{zhang2023ethics} identifican cinco factores que determinan la confiabilidad de la IA médica (calidad de los datos, sesgo algorítmico, opacidad, seguridad y atribución de responsabilidad), y distinguen dentro del sesgo algorítmico dos orígenes: el inducido por decisiones humanas de diseño (etiquetado, ponderación de atributos) y el inducido por datos de entrenamiento no representativos de la población objetivo, este último ilustrado con el caso de sistemas de diagnóstico dermatológico que fallan en pieles oscuras por su escasa representación en las bases de imágenes disponibles.
+
+\subsubsection{Fuentes documentadas de sesgo algorítmico en salud}
+
+La evidencia empírica reciente confirma que el sesgo algorítmico en salud es un patrón medible en al menos tres frentes distintos. Obra et al. \cite{obra2025potential} revisaron 690 instrumentos de decisión clínica y encontraron una sobrerrepresentación sistemática de participantes e investigadores blancos y varones en su desarrollo. Abulibdeh et al. \cite{abulibdeh2026integration} muestran que, al clasificar raza a partir de texto clínico, los modelos basados en transformadores presentan tasas de verdaderos positivos cercanas a cero para grupos minoritarios, mientras que una arquitectura alineada con la estructura de la nota clínica reduce sustancialmente esa disparidad, evidenciando que el sesgo también depende de decisiones arquitectónicas y no solo de los datos. No todos los hallazgos son negativos: Hourmozdi et al. \cite{hourmozdi2025evaluating} evaluaron cuatro algoritmos para detección de amiloidosis cardíaca y el de mejor desempeño cumplió el criterio de igualdad de oportunidades entre pacientes de raza negra, sugiriendo que el sesgo no es inevitable cuando se audita explícitamente.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=\columnwidth]{fuentes de sesgo.png}
+    \caption{Taxonomía de fuentes de sesgo algorítmico en salud según la etapa del ciclo de vida del modelo (recolección de datos, definición de variables, arquitectura/entrenamiento, despliegue). El recuadro punteado ilustra un caso donde la auditoría explícita de equidad evitó el sesgo, en contraste con la ausencia de auditoría documentada en la etapa de despliegue.}
+    \label{fig:placeholder}
+\end{figure}
+
+\subsubsection{Marcos y esfuerzos de mitigación a nivel de dominio}
+
+A nivel de dominio se han propuesto marcos para anticipar el sesgo antes del despliegue clínico. Agarwal et al. \cite{agarwal2023addressing} proponen un marco técnico de cuatro etapas, citando el caso ampliamente documentado de un algoritmo que usaba el costo de atención como proxy de necesidad de salud y subestimaba sistemáticamente la enfermedad en pacientes negros. Zhang y Zhang \cite{zhang2023ethics} plantean, en cambio, un marco de gobernanza en tres niveles (valores, principios y normas éticas) orientado a la regulación. A nivel técnico, Abulibdeh et al. \cite{abulibdeh2026integration} muestran que intervenciones de mitigación (muestreo estratificado, pérdida consciente de equidad, ajuste de umbrales) no tienen un efecto uniforme entre arquitecturas, mejorando la paridad en unas y degradando el desempeño en otras.
+
+\subsubsection{Qué está resuelto y qué sigue abierto}
+
+Pese a estos avances, la adopción sistemática de principios de equidad en estudios clínicos sigue siendo escasa. Huang et al. \cite{huang2022evaluation} revisaron 12 estudios de sesgo racial en ML clínico: el 67\% confirmó sesgo, pero solo el 17\% evaluó mitigación con comparación contra un modelo base, lo que atribuyen a la escasa disponibilidad de datos y al reporte deficiente de los modelos. Esta brecha se extiende más allá del aprendizaje supervisado: Adouani et al. \cite{adouani2026rethinking} muestran que la equidad en aprendizaje no supervisado en salud carece de definiciones y métricas consensuadas. En conjunto, la evaluación sistemática de equidad mediante métricas explícitas, el enfoque que este proyecto adopta para BRFSS 2024, sigue siendo la excepción y no la norma en la literatura clínica.
 
 \subsection{Eje B: Las Técnicas}
 
@@ -213,7 +235,42 @@ Para medir la equidad del modelo entre grupos demográficos (sexo y raza) se usa
 Estas cuatro métricas se calcularán sobre el conjunto de prueba de cada uno de los 5 pliegues de la validación cruzada, y se reportará el promedio y la variación entre pliegues para tener una idea de qué tan estables son los resultados.
 
 \section{Análisis Técnico (Específico del Track A)}
-% TODO: desarrollar el análisis técnico.
+
+\subsection{Análisis Exploratorio de Datos}
+
+El dataset consta de 457,670 registros y 33 columnas. La variable objetivo (riesgo cardiovascular) se construye como la unión lógica de \texttt{CVDINFR4}, \texttt{CVDCRHD4} y \texttt{CVDSTRK3}, excluyendo previamente los 7,910 registros (1.73\% del total) con al menos un valor faltante en estas tres columnas, en lugar de tratar dichos valores como ausencia de riesgo. Sobre los 449,760 registros válidos, el desbalance resultante es de 88.18\% sin riesgo frente a 11.82\% con riesgo, consistente con lo reportado en la Sección~IV-D. Al desagregar por grupo demográfico, la disparidad más marcada no aparece por sexo (13.57\% en hombres vs. 10.24\% en mujeres) ni por raza (entre 4.39\% y 14.05\% según grupo), sino por nivel de ingreso: aplicando el mismo criterio de exclusión, la prevalencia de riesgo desciende de forma prácticamente monotónica desde 19.87\% en la categoría de ingreso de \$15,000--\$24,999 hasta 5.51\% en el grupo de mayores ingresos (\(\geq \$200,000\)), con la categoría de menor ingreso (<\$15,000) en 18.64\%. Este gradiente socioeconómico, más pronunciado que las brechas de sexo o raza, respalda incluir \texttt{\_INCOMG1} como atributo sensible adicional en el análisis de equidad.
+
+\subsection{Diccionario de Datos}
+Las 33 variables del dataset se agrupan en cinco categorías: demografía y variables socioeconómicas (13 variables), antropometría (3), antecedentes cardiovasculares y comorbilidades (9), estilo de vida (4), y salud percibida (3). El detalle de cada variable, su definición y codificación de valores se documenta en el README del repositorio de datos. Las variables protegidas para el análisis de equidad son \texttt{\_SEX}, \texttt{\_RACE} e \texttt{\_INCOMG1}.
+
+\subsection{Calidad de Datos}
+
+29 de las 33 columnas presentan al menos un valor faltante; únicamente 4 columnas están completas. El diagrama siguiente resume las variables con mayor proporción de valores faltantes sobre el total de 457,670 registros originales.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=\columnwidth]{valores_faltantes.png}
+    \caption {Porcentaje de valores faltantes por variable, sobre los 457,670 registros originales del dataset. \texttt{\_INCOMG1} se resalta por concentrar la mayor proporción de datos faltantes (19.10\%), relevante para el análisis de equidad al ser uno de los atributos protegidos del estudio.}
+    \label{fig:placeholder}
+\end{figure}
+
+Adicionalmente, se identificó un problema de calidad de datos no documentado en el README original: 6 registros presentan valores de \texttt{HEIGHT3} superiores a 250~cm (máximo observado: 815~cm), fisiológicamente imposibles, probablemente originados por un residuo de la conversión pies/pulgadas a centímetros del archivo fuente del CDC. Estos registros serán recodificados a valor faltante antes de la imputación, en lugar de tratarse como \textit{outliers} estadísticos.
+
+\subsection{Imputación}
+
+Dado que \texttt{\_INCOMG1} concentra la mayor proporción de valores faltantes (19.10\%) y que este patrón es un fenómeno documentado en encuestas de salud (asociado a la reticencia a reportar ingresos y no a un mecanismo aleatorio), la imputación proporcional se calculará de forma independiente dentro de cada pliegue de la validación cruzada, evitando que la distribución de ingresos del conjunto de prueba influya en la imputación del conjunto de entrenamiento. El 1.73\% de registros excluidos por valores faltantes en las columnas que definen la variable objetivo (Sección~V-A) se descarta antes de la partición en pliegues, ya que no corresponde a una variable predictora imputable sino a la ausencia de una etiqueta confiable.
+
+\subsection{Outliers}
+
+Se aplicó el método de rango intercuartílico (IQR, $k=1.5$) sobre las variables continuas. Para \texttt{\_BMI5} (3.15\% de outliers), \texttt{WEIGHT2} (1.72\%) y \texttt{HEIGHT3} (0.43\%, excluyendo los 6 valores imposibles ya descritos), el método identifica casos plausibles de obesidad severa o baja estatura, que se conservan por representar variabilidad real de la población. Para \texttt{PHYSHLTH}, \texttt{MENTHLTH} y \texttt{\_DRNKWK3}, en cambio, el método IQR marca entre 13.90\% y 14.81\% de los registros como atípicos, un porcentaje excesivo que refleja la naturaleza de estas variables (distribución muy concentrada en cero, con un rango acotado por diseño de 0 a 30 días), por lo que el criterio IQR no es apropiado aquí; se conserva el rango completo definido por el diseño de la encuesta.
+
+\subsection{Desbalance de Clases}
+
+Además del desbalance global (88.18\%/11.82\%) y su variación por sexo y raza (Sección~IV-D), el gradiente por ingreso descrito en la Sección~V-A (19.87\% a 5.51\%) motiva evaluar las métricas de equidad no solo entre grupos de sexo y raza, sino también entre categorías de ingreso de \texttt{\_INCOMG1}, ampliando el alcance del análisis de disparidad planteado originalmente en la Sección~IV.
+
+\subsection{Prevención de Data Leakage}
+
+Las tres variables que componen la etiqueta objetivo (\texttt{CVDINFR4}, \texttt{CVDCRHD4}, \texttt{CVDSTRK3}) se excluyen explícitamente del conjunto de variables predictoras. Ninguna otra variable del dataset se deriva matemáticamente del objetivo, aunque \texttt{GENHLTH} y \texttt{DIABETE4} están correlacionadas clínicamente con el riesgo cardiovascular sin ser una redefinición del mismo, por lo que se conservan como predictores legítimos. Como se describe en la Sección~IV-C, la imputación, normalización y balanceo con SMOTE se ajustan de forma independiente dentro de cada pliegue de validación cruzada, usando únicamente los datos de entrenamiento de ese pliegue.
 
 \section{Consideraciones Éticas Preliminares}
 % TODO: desarrollar las consideraciones éticas.
