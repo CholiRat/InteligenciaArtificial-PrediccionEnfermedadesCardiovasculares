@@ -38,19 +38,26 @@ Cartago, Costa Rica\\
 \maketitle
 
 \begin{abstract}
-% TODO: reemplazar por el resumen real una vez definida la Introducción.
+Este trabajo es un estado del arte sobre el aprendizaje automático clásico, que investiga el problema de la capacidad de discriminación de diferentes modelos tabulares y la amplificación o reducción de sesgos hacia subgrupos por sexo, raza e ingreso monetario. Se trabaja con el dataset de BRFSS 2024 (N = 457,670). Se recopilan varias fuentes, entre ellas artículos, extractos de libros u otros surveys para generar un baseline sobre el que se rige este trabajo. De este se obtiene que las métricas más relevantes para el estudio son Area Under the ROC Curve (AUROC), False Positive Rate (FPR), Equalized Odds Difference (EOD) y calibración por grupo. Para realizar la comparación, se escogieron modelos de Machine Learning comúnmente utilizados en el área, incluyendo Random Forest, XGBoost, Regresión Logística y SVM lineal. La meta es alcanzar o superar un resultado de entre 0.751 y 0.771 AUROC en todos los modelos, reducir la diferencia de Falsos Positivos entre poblaciones, disminuir o igualar el Equalized Odds Difference (EOD) al rango de 0.131 a 0.136, y acercar el valor de calibración por grupo a 1. Para ello, se implementa una metodología que asegura el balance de los datos para la evaluación justa y la prevención de data leakage. Esta consiste en aplicar una limpieza y selección de columnas sobre el dataset, normalizar datos mediante MinMax Scaling, validación estratificada cruzada de cinco pliegues, imputación proporcional y \textit{Synthetic Minority Over-sampling Technique} (SMOTE). En resumen, este survey busca ser un marco comparativo para entender la parcialidad que existe hacia determinados grupos demográficos entre los distintos modelos de Machine Learning.
 \end{abstract}
 
 \begin{IEEEkeywords}
+
+Predicción de enfermedades cardiovasculares · Sesgos en modelos de machine learning · CVD · AUROC · EOD · FPR · Falsos positivos · Calibración por grupo · Machine Learning · Random Forest · XGBoost · LightGBM · SVM lineal · SMOTE
+
 \end{IEEEkeywords}
 
 \section{Introducción}
-
 La incorporación de aprendizaje automático en la predicción de riesgo cardiovascular ha demostrado ganancias consistentes de desempeño frente a las líneas base clínicas tradicionales, pero esa ganancia no está distribuida de forma pareja entre la población: la literatura de equidad algorítmica en salud documenta casos en los que los mismos modelos que mejoran la discriminación global subestiman sistemáticamente el riesgo en subgrupos demográficos específicos. Este proyecto aborda dicho problema sobre un dataset poco explorado por esa literatura, la cual se concentra mayoritariamente en registros médicos hospitalarios: el \textit{Behavioral Risk Factor Surveillance System} (BRFSS) 2024 del CDC, una encuesta poblacional autorreportada con un desbalance de clases considerable.
 
 La pregunta de investigación que guía este trabajo es: ¿qué relación existe entre la capacidad de discriminación de diferentes modelos tabulares y la amplificación o reducción de sesgos (FPR y EOD) hacia subgrupos protegidos por sexo, raza e ingreso? Para responderla, se comparan cuatro modelos bajo un mismo pipeline, evaluando tanto su desempeño general como métricas específicas de equidad, con especial atención al manejo del desbalance de clases y a la calidad de los datos disponibles.
 
-El resto del documento se organiza de la siguiente forma: la Sección~II revisa los trabajos relacionados en tres ejes (equidad algorítmica en salud, técnicas tabulares para riesgo cardiovascular, y estudios previos sobre BRFSS); la Sección~III establece el baseline de literatura; la Sección~IV describe la metodología propuesta; la Sección~V presenta el análisis técnico del dataset; y las Secciones~VI y VII cierran con las consideraciones éticas y la declaración de uso de IA.
+Como hipótesis de trabajo, se plantea que los modelos con mayor capacidad de discriminación (los ensambles Random Forest y XGBoost) presentarán una disparidad de FPR y EOD mayor entre grupos protegidos que un modelo lineal simple (Regresión Logística), replicando el patrón reportado en la literatura para otros datasets clínicos \cite{li2023evaluating}. Esta hipótesis es falsable: si los modelos complejos no muestran una disparidad mayor, o la muestran menor, la hipótesis queda refutada.
+
+A partir de esto, el objetivo general del proyecto es comparar el desempeño predictivo y la equidad entre modelos tabulares para la predicción de riesgo cardiovascular sobre BRFSS 2024. Los objetivos específicos son: (1) construir un pipeline de preprocesamiento sin fuga de datos para el dataset, (2) entrenar y comparar cuatro modelos (Regresión Logística, Random Forest, XGBoost y SVM) bajo el mismo protocolo experimental, (3) cuantificar la disparidad de FPR y EOD entre grupos de sexo, raza e ingreso para cada modelo, y (4) contrastar los resultados obtenidos contra el baseline de literatura definido en la Sección~III.
+
+El resto del documento se organiza de la siguiente forma: la Sección~II revisa los trabajos relacionados en tres ejes (equidad algorítmica en salud, técnicas tabulares para riesgo cardiovascular, y estudios previos sobre BRFSS), la Sección~III establece el baseline de literatura, la Sección~IV describe la metodología propuesta, la Sección~V presenta el análisis técnico del dataset, y las Secciones~VI y VII cierran con las consideraciones éticas y la declaración de uso de IA.
+
 
 \section{Trabajos Relacionados}
 
@@ -100,7 +107,7 @@ El dataset empleado es el BRFSS (Behavioral Risk Factor Surveillance System) 202
 
 Se revisaron cinco artículos relevantes para el dataset utilizado, de ellos tres usan el mismo dataset de BRFSS \cite{imani2026predicting}, \cite{islam2026leakage}, \cite{farquhar2026persistent} únicamente variando el año (2022, 2024 y 2024 respectivamente). Los demás tratan los datasets \textit{Cardiovascular Disease dataset de Kaggle} \cite{dritsas2023efficient}, y un conjunto de cohortes combinadas actualizado, que incluye seis estudios de investigación cardiovascular (ARIC, CARDIA, CHS, FHS Offspring, MESA y JHS) \cite{li2023evaluating}.
 
-Los artículos que comparten el mismo dataset de esta investigación no son directamente comparables, tienen diferencias importantes. Para empezar, el BFRSS 2022 \cite{imani2026predicting}, varía en el número de registros, con solo 221,643 participantes. En cuanto al paper de investigación \cite{farquhar2026persistent}, su foco es la detección del VIH. A pesar de esto, se agrega porque aborda temas de salud pública sobre la misma población y lleva a conclusiones sobre la discriminación de los modelos de \textit{Machine Learning}. Por último, ninguno de los artículos coincide con el número de columnas previsto para esta investigación, ya que omiten o no mencionan el uso de preprocesamiento para la limpieza de valores innecesarios.
+Los artículos que comparten el mismo dataset de esta investigación no son directamente comparables, tienen diferencias importantes. Para empezar, el BRFSS 2022 \cite{imani2026predicting}, varía en el número de registros, con solo 221,643 participantes. En cuanto al paper de investigación \cite{farquhar2026persistent}, su foco es la detección del VIH. A pesar de esto, se agrega porque aborda temas de salud pública sobre la misma población y lleva a conclusiones sobre la discriminación de los modelos de \textit{Machine Learning}. Por último, ninguno de los artículos coincide con el número de columnas previsto para esta investigación, ya que omiten o no mencionan el uso de preprocesamiento para la limpieza de valores innecesarios.
 
 Las publicaciones que difieren en datos tienen una clara limitación sobre la precisión de los valores obtenidos. El dataset de Kaggle \cite{dritsas2023efficient} carece de características demográficas que permiten el cálculo de falsos positivos sobre el sexo y la raza, pero comparte columnas con el dataset seleccionado. Por el contrario, el conjunto de cohortes dado por \cite{li2023evaluating} resulta pertinente por la inclusión de métricas de EOD (\textit{Equal Opportunity Difference}), además de que trata con la predicción de riesgo cardiovascular.
 
@@ -156,13 +163,24 @@ Rawash et al. \cite{rawash2026study} & 2026 & RF, XGBoost, KNN, GaussianNB & Fra
 \FloatBarrier
 
 \subsection{Brechas de Literatura}
-% TODO: desarrollar el apartado de brechas.
+
+De la revisión anterior se identifican cinco carencias concretas en la literatura, de las cuales este proyecto aborda directamente cuatro y reconoce una fuera de su alcance.
+
+\textbf{1. La evaluación sistemática de equidad sigue siendo la excepción.} Como se señaló en la Sección~II-A, la mayoría de los trabajos que documentan sesgo algorítmico en salud lo hacen mediante revisiones cualitativas o marcos conceptuales (\cite{zhang2023ethics}, \cite{obra2025potential}, \cite{agarwal2023addressing}, \cite{huang2022evaluation}), sin acompañarlos de métricas de equidad cuantitativas sobre un dataset propio. Este proyecto lo aborda directamente: mide FPR, EOD y calibración de forma explícita y reproducible sobre BRFSS 2024.
+
+\textbf{2. Los estudios de equidad rara vez cubren más de un atributo protegido a la vez.} La mayoría de los trabajos revisados evalúa disparidad por raza o por sexo, pero no ambos junto con una tercera dimensión socioeconómica. El propio análisis exploratorio de este proyecto (Sección~V-A) encontró que el gradiente de riesgo por nivel de ingreso (19.87\% a 5.51\%) es más pronunciado que las brechas de sexo o raza, algo que ningún estudio revisado reporta para este tipo de problema. Este proyecto lo aborda directamente, incluyendo \texttt{\_INCOMG1} como atributo protegido adicional.
+
+\textbf{3. Casi no hay literatura de equidad sobre datos de encuesta autorreportada como BRFSS.} De los cinco artículos revisados sobre el mismo dataset o datasets análogos (Sección~II-C), solo tres usan BRFSS, y ninguno combina un modelo lineal interpretable (Regresión Logística o SVM lineal) con ensambles de árboles bajo un mismo protocolo de equidad. Este proyecto lo aborda directamente al comparar los cuatro modelos definidos en la Sección~IV-E sobre el mismo pipeline.
+
+\textbf{4. La paradoja entre equidad y calibración no se ha probado con alternativas más simples.} Foryciarz et al. \cite{foryciarz2022evaluating} y Pfohl et al. \cite{pfohl2021empirical} muestran que forzar paridad de \textit{Equalized Odds} durante el entrenamiento degrada la calibración clínica (fenómeno de ``nivelación hacia abajo''), pero no evalúan si técnicas más simples de balanceo, como \textit{class weighting} (Sección~IV-D), logran una mejora de equidad sin ese costo. Este proyecto lo aborda de forma parcial: compara el desempeño y la equidad de los cuatro modelos entrenados con SMOTE, pero implementar y comparar técnicas de mitigación restringida (como Equalized Odds forzado durante el entrenamiento) queda fuera del alcance de esta etapa.
+
+\textbf{5. Los datasets más usados en la literatura de CVD carecen de variables demográficas.} El dataset de Kaggle usado por Dritsas y Trigka \cite{dritsas2023efficient} y por Sathyaseelan y Sarathambekai \cite{sathyaseelan2025comparative} alcanza resultados altos de AUC (hasta 0.982), pero no incluye sexo, raza ni ingreso, por lo que no permite evaluar equidad. Esta limitación no es algo que este proyecto pueda corregir sobre esos datasets ajenos, pero explica por qué se optó por BRFSS a pesar de ser un dataset menos explorado en la literatura de \textit{Machine Learning} clásico: es, de los revisados, el único con la cobertura demográfica necesaria para responder la pregunta de investigación de este trabajo.
 
 \section{Baseline de Literatura}
 
 Con base en la revisión de literatura sobre modelos tabulares aplicados a datos cardiovasculares, se establece como meta principal alcanzar o superar un área bajo la curva ROC (\textbf{AUROC}) entre \textbf{0.751 y 0.771} \cite{li2023evaluating, cho2021preexisting}. Este rango corresponde a los resultados reportados por Cho et al. (2021) y Li et al. (2023) al evaluar ensamblajes como Random Forest y Gradient Boosting sobre registros clínicos.
 
-De forma complementaria, como línea base de la evaluación de imparcialidad de los algoritmos, se busca reducir la disparidad en la tasa de falsos positivos y en la Diferencia de Igualdad de Oportunidades (\textit{Equal Opportunity Difference}) entre hombres y mujeres en al menos un 50\% respecto a los modelos basales sin calibrar. Esta meta toma como referencia a Li et al. (2023) \cite{li2023evaluating}, quienes reportan una reducción del 57\% en la Diferencia de Igualdad de Oportunidades al comparar Random Forest frente a regresión logística; se plantea un 50\% como meta para este proyecto.
+De forma complementaria, como línea base de la evaluación de imparcialidad de los algoritmos, se busca reducir la disparidad en la tasa de falsos positivos y disminuir o igualar la Diferencia de Odds Igualadas (\textit{Equalized Odds Difference}, EOD) al rango de 0.131 a 0.136 entre hombres y mujeres. Esta meta toma como referencia a Li et al. (2023) \cite{li2023evaluating}, quienes reportan ese rango de EOD al comparar Random Forest frente a regresión logística por sexo.
 
 Es importante señalar que esta comparación no es perfecta. Li et al. y Cho et al. usan registros clínicos electrónicos (EHR) de hospitales, mientras que este proyecto usa BRFSS, una encuesta telefónica autorreportada. Esto implica diferentes fuentes de error (recuerdo del paciente en vez de diagnóstico clínico) y poblaciones distintas (EE. UU. institucional vs. cohorte coreana). Por lo tanto, el rango de AUROC se toma como una referencia razonable del estado del arte y no como un objetivo exacto bajo el mismo protocolo.
 
@@ -170,7 +188,7 @@ Es importante señalar que esta comparación no es perfecta. Li et al. y Cho et 
 
 \subsection{Definición del Problema}
 
-Este proyecto se plantea como un problema de clasificación binaria supervisada. La variable objetivo, a la que llamamos riesgo cardiovascular, toma el valor de 1 si la persona encuestada reporta haber tenido un infarto, una enfermedad coronaria o un accidente cerebrovascular, y el valor de 0 si no reporta ninguno de los tres. Esta variable se construye a partir de las columnas CVDINFR4, CVDCRHD4 y CVDSTRK3 del dataset BRFSS.
+Este proyecto se plantea como un problema de clasificación binaria supervisada para encontrar sesgos según grupos demográficos. La variable objetivo, a la que llamamos riesgo cardiovascular, toma el valor de 1 si la persona encuestada reporta haber tenido un infarto, una enfermedad coronaria o un accidente cerebrovascular, y el valor de 0 si no reporta ninguno de los tres. Esta variable se construye a partir de las columnas CVDINFR4, CVDCRHD4 y CVDSTRK3 del dataset BRFSS.
 
 Como variables de entrada se usan datos demográficos (edad, sexo, raza), datos antropométricos (índice de masa corporal, peso, altura), hábitos de vida (fumado, actividad física, consumo de alcohol) y otras condiciones de salud relacionadas (diabetes, salud general percibida). El sexo y la raza se usan además como atributos protegidos: aparte de ser posibles variables de entrada, sirven para comparar si el modelo se equivoca más con unos grupos que con otros.
 
@@ -262,7 +280,7 @@ Donde:
 Para medir la equidad del modelo entre grupos demográficos (sexo y raza) se usarán tres métricas adicionales:
 
 \begin{itemize}
-\item \textbf{Diferencia de Igualdad de Oportunidades (\textit{Equal Opportunity Difference}, EOD):} diferencia en la tasa de verdaderos positivos entre grupos. Un valor cercano a 0 indica que el modelo detecta el riesgo real con una efectividad parecida en todos los grupos.
+\item \textbf{Diferencia de Odds Igualadas (\textit{Equalized Odds Difference}, EOD):} diferencia en la tasa de verdaderos positivos entre grupos. Un valor cercano a 0 indica que el modelo detecta el riesgo real con una efectividad parecida en todos los grupos.
 
 \[
 EOD = \max_{i,j} \left| TPR_i - TPR_j \right|
@@ -273,6 +291,7 @@ Donde:
 \item TPR: Tasa de verdaderos positivos.
 \end{itemize}
 
+La definición completa de \textit{Equalized Odds} exige paridad tanto en TPR como en FPR entre grupos. En este trabajo, esa segunda condición se evalúa por separado mediante la métrica de disparidad de FPR descrita a continuación, en vez de combinarla en una sola fórmula; de forma conjunta, ambas métricas cubren el mismo criterio.
 
 \item \textbf{Disparidad en la tasa de falsos positivos (FPR):} diferencia en la proporción de personas sin riesgo real que el modelo clasifica por error como en riesgo, comparando entre grupos.
 
@@ -309,11 +328,11 @@ Estas cuatro métricas se calcularán sobre el conjunto de prueba de cada uno de
 El dataset consta de 457,670 registros y 33 columnas. La variable objetivo (riesgo cardiovascular) se construye como la unión lógica de \texttt{CVDINFR4}, \texttt{CVDCRHD4} y \texttt{CVDSTRK3}, excluyendo previamente los 7,910 registros (1.73\% del total) con al menos un valor faltante en estas tres columnas, en lugar de tratar dichos valores como ausencia de riesgo. Sobre los 449,760 registros válidos, el desbalance resultante es de 88.18\% sin riesgo frente a 11.82\% con riesgo, consistente con lo reportado en la Sección~IV-D. Al desagregar por grupo demográfico, la disparidad más marcada no aparece por sexo (13.57\% en hombres vs. 10.24\% en mujeres) ni por raza (entre 4.39\% y 14.05\% según grupo), sino por nivel de ingreso: aplicando el mismo criterio de exclusión, la prevalencia de riesgo desciende de forma prácticamente monotónica desde 19.87\% en la categoría de ingreso de \$15,000--\$24,999 hasta 5.51\% en el grupo de mayores ingresos (\(\geq \$200,000\)), con la categoría de menor ingreso (<\$15,000) en 18.64\%. Este gradiente socioeconómico, más pronunciado que las brechas de sexo o raza, respalda incluir \texttt{\_INCOMG1} como atributo sensible adicional en el análisis de equidad.
 
 \subsection{Diccionario de Datos}
-Las 33 variables del dataset se agrupan en cinco categorías: demografía y variables socioeconómicas (14 variables), antropometría (3), antecedentes cardiovasculares y comorbilidades (9), estilo de vida (4), y salud percibida (3). El detalle de cada variable, su definición y codificación de valores se documenta en el README del repositorio de datos. Las variables protegidas para el análisis de equidad son \texttt{\_SEX}, \texttt{\_RACE} e \texttt{\_INCOMG1}.
+Las 33 variables del dataset se agrupan en cinco categorías: demografía y variables socioeconómicas (14 variables), antropometría (3), antecedentes cardiovasculares y comorbilidades (9), estilo de vida (4), y salud percibida (3). El detalle de cada variable, su definición y codificación de valores se documenta en el diccionario de datos del repositorio (\texttt{Dataset/diccionario\_datos.md}). Las variables protegidas para el análisis de equidad son \texttt{\_SEX}, \texttt{\_RACE} e \texttt{\_INCOMG1}.
 
 \subsection{Calidad de Datos}
 
-29 de las 33 columnas presentan al menos un valor faltante; únicamente 4 columnas están completas. El diagrama siguiente resume las variables con mayor proporción de valores faltantes sobre el total de 457,670 registros originales.
+29 de las 33 columnas presentan al menos un valor faltante, únicamente 4 columnas están completas. El diagrama siguiente resume las variables con mayor proporción de valores faltantes sobre el total de 457,670 registros originales.
 
 \begin{figure}[h]
     \centering
@@ -330,7 +349,7 @@ Dado que \texttt{\_INCOMG1} concentra la mayor proporción de valores faltantes 
 
 \subsection{Outliers}
 
-Se aplicó el método de rango intercuartílico (IQR, $k=1.5$) sobre las variables continuas. Para \texttt{\_BMI5} (3.15\% de outliers), \texttt{WEIGHT2} (1.72\%) y \texttt{HEIGHT3} (0.43\%, excluyendo los 6 valores imposibles ya descritos), el método identifica casos plausibles de obesidad severa o baja estatura, que se conservan por representar variabilidad real de la población. Para \texttt{PHYSHLTH}, \texttt{MENTHLTH} y \texttt{\_DRNKWK3}, en cambio, el método IQR marca entre 13.90\% y 14.81\% de los registros como atípicos, un porcentaje excesivo que refleja la naturaleza de estas variables (distribución muy concentrada en cero, con un rango acotado por diseño de 0 a 30 días), por lo que el criterio IQR no es apropiado aquí; se conserva el rango completo definido por el diseño de la encuesta.
+Se aplicó el método de rango intercuartílico (IQR, $k=1.5$) sobre las variables continuas. Para \texttt{\_BMI5} (3.15\% de outliers), \texttt{WEIGHT2} (1.72\%) y \texttt{HEIGHT3} (0.43\%, excluyendo los 6 valores imposibles ya descritos), el método identifica casos plausibles de obesidad severa o baja estatura, que se conservan por representar variabilidad real de la población. Para \texttt{PHYSHLTH}, \texttt{MENTHLTH} y \texttt{\_DRNKWK3}, en cambio, el método IQR marca entre 13.90\% y 14.81\% de los registros como atípicos, un porcentaje excesivo que refleja la naturaleza de estas variables (distribución muy concentrada en cero, con un rango acotado por diseño de 0 a 30 días), por lo que el criterio IQR no es apropiado aquí, se conserva el rango completo definido por el diseño de la encuesta.
 
 \subsection{Desbalance de Clases}
 
@@ -343,9 +362,9 @@ Las tres variables que componen la etiqueta objetivo (\texttt{CVDINFR4}, \texttt
 \section{Consideraciones Éticas Preliminares}
 Como se evidencia a lo largo de este trabajo, hay un gran riesgo de sesgo a la hora de determinar el rendimiento de los modelos. Este estudio intenta reducir el desbalance de datos con técnicas de imputación proporcional o SMOTE,  y así obtener resultados que ilustren la posible discriminación hacia ciertos grupos con datos equitativos. La información del dataset crudo demuestra que hay 13.57\% de hombres que sufren CVD y 10.24\% mujeres. Además, varía entre grupos raciales, entre 4.39\% y 14.05\% según el grupo. Por lo tanto, el riesgo de sesgos es alto, en especial por el volumen de datos con el que se estará trabajando.
 
-Un posible problema a la hora de reducir el sesgo es la inclusión de los atributos protegidos en el entrenamiento \cite{li2023evaluating}. Esto podría generar parcialidad por el agente, en cambio, no agregar las columnas sobre raza y sexo resultaría beneficioso para que el algoritmo no detecte diferencias entre las poblaciones. Aún así, \cite{farquhar2026persistent} explica la posibilidad de que factores incluidos en el dataset de BRFSS como índice de pobreza, nivel de acceso a servicios médicos o ubicación geográfica amplíen la disparidad incluso cuando no están los grupos demográficos presentes explícitamente.
+Un posible problema a la hora de reducir el sesgo es la inclusión de los atributos protegidos en el entrenamiento \cite{li2023evaluating}. Esto podría generar parcialidad por el agente, en cambio, no agregar las columnas sobre raza y sexo resultaría beneficioso para que el algoritmo no detecte diferencias entre las poblaciones. Aún así, Farquhar \cite{farquhar2026persistent} explica la posibilidad de que factores incluidos en el dataset de BRFSS como índice de pobreza, nivel de acceso a servicios médicos o ubicación geográfica amplíen la disparidad incluso cuando no están los grupos demográficos presentes explícitamente.
 
-También, \cite{sheetal2026evaluating} sugiere limitaciones con el uso de SMOTE, específicamente, cuando esta es la única técnica implementada. Dicta que un único acercamiento a la corrección de desbalance podría resultar en dificultades para detectar enfermedades cardiovasculares sobre las clases minoritarias. Para corregirlo, indica que es necesario algún método adicional como \textit{oversampling}, \textit{undersampling}, \textit{class weight} u otro, dependiendo de las propiedades del dataset.  
+También, Sheetal et al. \cite{sheetal2026evaluating} sugieren limitaciones con el uso de SMOTE, específicamente, cuando esta es la única técnica implementada. Dicta que un único acercamiento a la corrección de desbalance podría resultar en dificultades para detectar enfermedades cardiovasculares sobre las clases minoritarias. Para corregirlo, indica que es necesario algún método adicional como \textit{oversampling}, \textit{undersampling}, \textit{class weight} u otro, dependiendo de las propiedades del dataset.  
 
 Otro riesgo a tener en cuenta es la calidad de información recopilada por BRFSS en 2024 y cómo esta puede estar siendo afectada por factores como los cambios de habito post-pandemia. Características como el grado de aislamiento, frecuencia de actividad física o acceso a salud puede estar distorsionado por el momento en qué se obtuvo esta información. Esto impacta los resultados que brinden los agentes sobre la conducta de ciertos grupos demográficos y las conclusiones podrían volverse obsoletas con un dataset más actual.
 
