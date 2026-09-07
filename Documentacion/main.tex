@@ -105,6 +105,8 @@ Otras conclusiones pertinentes son las vinculadas a la equidad del modelo. La in
 
 De lo anterior, se extrae que Stacking Ensemble fue el modelo más preciso con 0.982 AUC. Random Forest ha sido el más consistente entre las distintas literaturas, posicionándose en segundo lugar en varios artículos. \cite{li2023evaluating} tiene una métrica ideal de EOD con 0.001-0.018 cuando se trata con grupos raciales, sin embargo, solo compara población blanca y negra. En cuanto a EOD entre sexo masculino y femenino, 0.131 a 0.136 es el número más bajo que se logró conseguir. 
 
+Las principales debilidades del dataset BRFSS 2024 es el desbalance de grupos demográficos, y la baja representación de determinadas poblaciones debido a la naturaleza del dataset como encuesta telefónica. A su vez, hay una gran cantidad de datos faltantes o inconsistentes producto del autorreporte de los entrevistados.
+
 \subsection{Tabla Comparativa}
 
 \begin{table*}[t]
@@ -123,7 +125,7 @@ Abulibdeh et al. \cite{abulibdeh2026integration} & 2026 & Transformers para NLP 
 Hourmozdi et al. \cite{hourmozdi2025evaluating} & 2025 & 4 modelos predictivos (detección de amiloidosis) & Pacientes evaluados por amiloidosis cardíaca & Igualdad de Oportunidades & Mejor modelo cumplió igualdad de oportunidades para raza negra & Resultado positivo no generalizable a otros contextos \\
 Agarwal et al. \cite{agarwal2023addressing} & 2023 & Marco técnico de mitigación de sesgo en 4 etapas & Caso: proxy de costo de atención & N/A & Marco para anticipar sesgo antes del despliegue clínico & Basado en casos documentados, sin validación cuantitativa propia \\
 Huang et al. \cite{huang2022evaluation} & 2022 & Revisión sistemática (\textit{scoping review}) & 12 estudios de sesgo racial en ML clínico & \% de estudios con mitigación evaluada & 67\% confirmó sesgo; solo 17\% evaluó mitigación con modelo base & Escasa disponibilidad de datos y reporte deficiente \\
-Adouani et al. \cite{adouani2026rethinking} & 2026 & Revisión metodológica (\textit{scoping review}) & Aprendizaje no supervisado en salud & N/A (sin métricas consensuadas) & Identifica ausencia de definiciones y métricas de equidad consensuadas & Área emergente sin marco de evaluación estandarizado \\
+Adouani et al. \cite{adouani2026rethinking} & 2026 & Survey & Aprendizaje no supervisado en salud & N/A (sin métricas consensuadas) & Identifica ausencia de definiciones y métricas de equidad consensuadas & Área emergente sin marco de evaluación estandarizado \\
 Li et al. \cite{li2023evaluating} & 2023 & RF, XGBoost, LR, PCE & VUMC EHR ($N=109\,490$) & AUC, EOD, DI & RF AUC: 0.771 (PCE: 0.730) & Mitigación estándar degrada precisión general. \\
 Davoudi et al. \cite{davoudi2024fairness} & 2024 & LightGBM, XGBoost, AutoGluon & VNS Health ($N=12\,189$) & AUC, Equal Opportunity & Ensamble AUC: 0.89 & Disparidad severa en subgrupos interseccionales. \\
 Foryciarz et al. \cite{foryciarz2022evaluating} & 2022 & PCE (LR), modelos restringidos & ARIC y cohortes agrupadas & Calibración (7.5\%), FPR, FNR & Unconstrained AUC: $\sim$0.76 & Forzar Equalized Odds destruye la calibración clínica. \\
@@ -243,17 +245,59 @@ Los cuatro modelos (LR, Random Forest, XGBoost y SVM) se entrenarán y evaluará
 
 Para medir qué tan bien funciona el modelo en general, se usará el área bajo la curva ROC (AUROC). Esta métrica indica qué tan bien el modelo distingue entre personas con y sin riesgo cardiovascular, sin depender de un único umbral de decisión. Se eligió como métrica principal porque es la misma que reportan la mayoría de los trabajos revisados en la Sección~II, lo que permite comparar los resultados de este proyecto contra la literatura (ver Sección~III).
 
+\[
+AUROC = \int_{0}^{1} TPR(FPR) \, d(FPR)
+\]
+Donde:
+\begin{itemize}
+\item TPR: Tasa de verdaderos positivos.
+\item FPR: Tasa de falsos positivos.
+\end{itemize}
+
 Para medir la equidad del modelo entre grupos demográficos (sexo y raza) se usarán tres métricas adicionales:
 
 \begin{itemize}
 \item \textbf{Diferencia de Igualdad de Oportunidades (\textit{Equal Opportunity Difference}, EOD):} diferencia en la tasa de verdaderos positivos entre grupos. Un valor cercano a 0 indica que el modelo detecta el riesgo real con una efectividad parecida en todos los grupos.
+
+\[
+EOD = \max_{i,j} \left| TPR_i - TPR_j \right|
+\]
+
+Donde:
+\begin{itemize}
+\item TPR: Tasa de verdaderos positivos.
+\end{itemize}
+
+
 \item \textbf{Disparidad en la tasa de falsos positivos (FPR):} diferencia en la proporción de personas sin riesgo real que el modelo clasifica por error como en riesgo, comparando entre grupos.
-\item \textbf{Calibración por grupo:} si el modelo predice, por ejemplo, un 20\% de probabilidad de riesgo, se revisa que cerca del 20\% de las personas de ese grupo con esa predicción sí tengan riesgo real.
+
+\[
+FPR = \frac{FP}{FP + TN}
+\]
+
+Donde:
+\begin{itemize}
+\item FP: Número de falsos positivos.
+\item TN: Número de verdaderos negativos.
+\end{itemize}
+
+\item \textbf{Calibración por grupo:} si el modelo predice, por ejemplo, un 20\% de probabilidad de riesgo, se revisa que cerca del 20\% de las personas de ese grupo con esa predicción sí tengan riesgo real. Se busca un valor cercano al 1. Una cantidad menor señala que el modelo predijo menos casos de los que realmente ocurrieron. Por el contrario, un número alto significa que se subestima el riesgo de un grupo específico.
+
+\[
+Calibracion_G = \frac{\sum_{i \in G} \hat{p}_i}{\sum_{i \in G} y_i}
+\]
+Donde:
+\begin{itemize}
+\item y: Etiqueta real (1 si enfermo, 0 si sano).
+\item p: Probabilidad calculada por el modelo.
+\item G: Subgrupo analizado.
+\end{itemize}
+
 \end{itemize}
 
 Estas cuatro métricas se calcularán sobre el conjunto de prueba de cada uno de los 5 pliegues de la validación cruzada, y se reportará el promedio y la variación entre pliegues para tener una idea de qué tan estables son los resultados.
 
-\section{Análisis Técnico (Específico del Track A)}
+\section{Análisis Técnico}
 
 \subsection{Análisis Exploratorio de Datos}
 
@@ -292,11 +336,19 @@ Además del desbalance global (88.18\%/11.82\%) y su variación por sexo y raza 
 Las tres variables que componen la etiqueta objetivo (\texttt{CVDINFR4}, \texttt{CVDCRHD4}, \texttt{CVDSTRK3}) se excluyen explícitamente del conjunto de variables predictoras. Ninguna otra variable del dataset se deriva matemáticamente del objetivo, aunque \texttt{GENHLTH} y \texttt{DIABETE4} están correlacionadas clínicamente con el riesgo cardiovascular sin ser una redefinición del mismo, por lo que se conservan como predictores legítimos. Como se describe en la Sección~IV-C, la imputación, normalización y balanceo con SMOTE se ajustan de forma independiente dentro de cada pliegue de validación cruzada, usando únicamente los datos de entrenamiento de ese pliegue.
 
 \section{Consideraciones Éticas Preliminares}
-% TODO: desarrollar las consideraciones éticas.
+Como se evidencia a lo largo de este trabajo, hay un gran riesgo de sesgo a la hora de determinar el rendimiento de los modelos. Este estudio intenta reducir el desbalance de datos con técnicas de imputación proporcional o SMOTE,  y así obtener resultados que ilustren la posible discriminación hacia ciertos grupos con datos equitativos. La información del dataset crudo demuestra que hay 13.57\% de hombres que sufren CVD y 10.24\% mujeres. Además, varía entre grupos raciales, entre 4.39\% y 14.05\% según el grupo. Por lo tanto, el riesgo de sesgos es alto, en especial por el volumen de datos con el que se estará trabajando.
+
+Un posible problema a la hora de reducir el sesgo es la inclusión de los atributos protegidos en el entrenamiento \cite{li2023evaluating}. Esto podría generar parcialidad por el agente, en cambio, no agregar las columnas sobre raza y sexo resultaría beneficioso para que el algoritmo no detecte diferencias entre las poblaciones. Aún así, \cite{farquhar2026persistent} explica la posibilidad de que factores incluidos en el dataset de BRFSS como índice de pobreza, nivel de acceso a servicios médicos o ubicación geográfica amplíen la disparidad incluso cuando no están los grupos demográficos presentes explícitamente.
+
+También, \cite{sheetal2026evaluating} sugiere limitaciones con el uso de SMOTE, específicamente, cuando esta es la única técnica implementada. Dicta que un único acercamiento a la corrección de desbalance podría resultar en dificultades para detectar enfermedades cardiovasculares sobre las clases minoritarias. Para corregirlo, indica que es necesario algún método adicional como \textit{oversampling}, \textit{undersampling}, \textit{class weight} u otro, dependiendo de las propiedades del dataset.  
+
+Otro riesgo a tener en cuenta es la calidad de información recopilada por BRFSS en 2024 y cómo esta puede estar siendo afectada por factores como los cambios de habito post-pandemia. Características como el grado de aislamiento, frecuencia de actividad física o acceso a salud puede estar distorsionado por el momento en qué se obtuvo esta información. Esto impacta los resultados que brinden los agentes sobre la conducta de ciertos grupos demográficos y las conclusiones podrían volverse obsoletas con un dataset más actual.
+
+Las dificultades anteriores han sido contempladas a lo largo de este estado del arte, y, a pesar de los riesgos que conlleva, se implementará resampling con SMOTE para el balanceo de datos. Aunque algunos artículos critican su eficiencia o su confiabilidad, se ha concluido que es el mejor método para evitar el desbalance de un dataset. Esto aborda las dos primeras problemáticas descritas. De esta forma, para asegurar la vigencia de los datos en el futuro sería necesario una comparación con un nuevo dataset más reciente, lo cual, no esta en el alcance de esta investigación, pero se mantiene como una de sus limitaciones.
 
 \section{Declaración de Uso de IA}
 
-El equipo utilizó un asistente de inteligencia artificial (LLM) como apoyo en tareas puntuales, nunca como sustituto de la investigación ni de las decisiones técnicas del proyecto. Concretamente, se usó para: dar formato al documento en LaTeX y depurar errores de compilación (estructura de tablas y figuras, referencias cruzadas); generar el código en Python de las figuras descriptivas a partir de datos ya calculados por el equipo (pipeline de preprocesamiento, distribución del riesgo por grupo demográfico, porcentaje de valores faltantes); y revisar la redacción de algunas secciones para mejorar claridad y consistencia con el resto del documento.
+El equipo utilizó un asistente de inteligencia artificial (LLM) como apoyo en tareas puntuales, nunca como sustituto de la investigación ni de las decisiones técnicas del proyecto. Concretamente, se usó para: dar formato al documento en LaTeX y depurar errores de compilación (estructura de tablas y figuras, referencias cruzadas), generar el código en Python de las figuras descriptivas a partir de datos ya calculados por el equipo (pipeline de preprocesamiento, distribución del riesgo por grupo demográfico, porcentaje de valores faltantes) y revisar la redacción de algunas secciones para mejorar claridad y consistencia con el resto del documento.
 
 La búsqueda, lectura y selección de la literatura citada, las decisiones de diseño metodológico y la interpretación de los resultados fueron realizadas por los autores. Todo contenido generado o sugerido por la herramienta fue revisado y verificado manualmente por al menos un integrante del equipo antes de incorporarse al documento final.
 
