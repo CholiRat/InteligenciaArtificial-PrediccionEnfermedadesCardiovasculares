@@ -45,7 +45,12 @@ Cartago, Costa Rica\\
 \end{IEEEkeywords}
 
 \section{Introducción}
-% TODO: desarrollar la introducción completa.
+
+La incorporación de aprendizaje automático en la predicción de riesgo cardiovascular ha demostrado ganancias consistentes de desempeño frente a las líneas base clínicas tradicionales, pero esa ganancia no está distribuida de forma pareja entre la población: la literatura de equidad algorítmica en salud documenta casos en los que los mismos modelos que mejoran la discriminación global subestiman sistemáticamente el riesgo en subgrupos demográficos específicos. Este proyecto aborda dicho problema sobre un dataset poco explorado por esa literatura, la cual se concentra mayoritariamente en registros médicos hospitalarios: el \textit{Behavioral Risk Factor Surveillance System} (BRFSS) 2024 del CDC, una encuesta poblacional autorreportada con un desbalance de clases considerable.
+
+La pregunta de investigación que guía este trabajo es: ¿qué relación existe entre la capacidad de discriminación de diferentes modelos tabulares y la amplificación o reducción de sesgos (FPR y EOD) hacia subgrupos protegidos por sexo, raza e ingreso? Para responderla, se comparan cuatro modelos bajo un mismo pipeline, evaluando tanto su desempeño general como métricas específicas de equidad, con especial atención al manejo del desbalance de clases y a la calidad de los datos disponibles.
+
+El resto del documento se organiza de la siguiente forma: la Sección~II revisa los trabajos relacionados en tres ejes (equidad algorítmica en salud, técnicas tabulares para riesgo cardiovascular, y estudios previos sobre BRFSS); la Sección~III establece el baseline de literatura; la Sección~IV describe la metodología propuesta; la Sección~V presenta el análisis técnico del dataset; y las Secciones~VI y VII cierran con las consideraciones éticas y la declaración de uso de IA.
 
 \section{Trabajos Relacionados}
 
