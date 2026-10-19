@@ -190,7 +190,7 @@ Es importante señalar que esta comparación no es perfecta. Li et al. y Cho et 
 
 Este proyecto se plantea como un problema de clasificación binaria supervisada para encontrar sesgos según grupos demográficos. La variable objetivo, a la que llamamos riesgo cardiovascular, toma el valor de 1 si la persona encuestada reporta haber tenido un infarto, una enfermedad coronaria o un accidente cerebrovascular, y el valor de 0 si no reporta ninguno de los tres. Esta variable se construye a partir de las columnas CVDINFR4, CVDCRHD4 y CVDSTRK3 del dataset BRFSS.
 
-Como variables de entrada se usan datos demográficos (edad, sexo, raza), datos antropométricos (índice de masa corporal, peso, altura), hábitos de vida (fumado, actividad física, consumo de alcohol) y otras condiciones de salud relacionadas (diabetes, salud general percibida). El sexo y la raza se usan además como atributos protegidos: aparte de ser posibles variables de entrada, sirven para comparar si el modelo se equivoca más con unos grupos que con otros.
+Como variables de entrada se usan datos demográficos (edad, sexo, raza), datos antropométricos (índice de masa corporal, peso, altura), hábitos de vida (fumado, actividad física, consumo de alcohol) y otras condiciones de salud relacionadas (diabetes, salud general percibida). El sexo, la raza y el ingreso se usan además como atributos protegidos: aparte de ser posibles variables de entrada, sirven para comparar si el modelo se equivoca más con unos grupos que con otros.
 
 En resumen, el modelo debe predecir si una persona tiene riesgo cardiovascular a partir de estas variables, y al mismo tiempo se debe revisar si la tasa de error se mantiene parecida entre los grupos demográficos mencionados.
 
@@ -277,7 +277,7 @@ Donde:
 \item FPR: Tasa de falsos positivos.
 \end{itemize}
 
-Para medir la equidad del modelo entre grupos demográficos (sexo y raza) se usarán tres métricas adicionales:
+Para medir la equidad del modelo entre grupos demográficos (sexo, raza e ingreso) se usarán tres métricas adicionales:
 
 \begin{itemize}
 \item \textbf{Diferencia de Odds Igualadas (\textit{Equalized Odds Difference}, EOD):} diferencia en la tasa de verdaderos positivos entre grupos. Un valor cercano a 0 indica que el modelo detecta el riesgo real con una efectividad parecida en todos los grupos.
@@ -305,7 +305,7 @@ Donde:
 \item TN: Número de verdaderos negativos.
 \end{itemize}
 
-\item \textbf{Calibración por grupo:} si el modelo predice, por ejemplo, un 20\% de probabilidad de riesgo, se revisa que cerca del 20\% de las personas de ese grupo con esa predicción sí tengan riesgo real. Se busca un valor cercano al 1. Una cantidad menor señala que el modelo predijo menos casos de los que realmente ocurrieron. Por el contrario, un número alto significa que se subestima el riesgo de un grupo específico.
+\item \textbf{Calibración por grupo:} si el modelo predice, por ejemplo, un 20\% de probabilidad de riesgo, se revisa que cerca del 20\% de las personas de ese grupo con esa predicción sí tengan riesgo real. Se busca un valor cercano al 1. Una cantidad menor señala que el modelo predijo menos casos de los que realmente ocurrieron. Por el contrario, un número alto significa que se sobreestima el riesgo de un grupo específico.
 
 \[
 Calibracion_G = \frac{\sum_{i \in G} \hat{p}_i}{\sum_{i \in G} y_i}
