@@ -202,7 +202,7 @@ Este dataset originalmente contiene 457,670 filas y 301 columnas. Para el estudi
 
 \subsection{Pipeline de Preprocesamiento}
 
-El pipeline de preprocesamiento se descompone en seis etapas: Limpieza del dataset crudo y selección de columnas necesarias, conversión estándar de medidas, división del dataset en pliegues, imputación proporcional, normalización de datos mediante \textit{MinMax Scaling} y SMOTE (\textit{Synthetic Minority Over-sampling Technique}). La Figura~\ref{fig:pipeline} resume este proceso.
+El pipeline de preprocesamiento se descompone en seis etapas: Limpieza del dataset crudo y selección de columnas necesarias, conversión estándar de medidas, división del dataset en pliegues, imputación proporcional, normalización de datos mediante \textit{MinMax Scaling} y SMOTENC (variante de \textit{Synthetic Minority Over-sampling Technique} para datos mixtos continuos y categóricos). La Figura~\ref{fig:pipeline} resume este proceso.
 
 \begin{figure}[h]
 \centering
@@ -222,7 +222,7 @@ A continuación, se implementa una normalización con MinMax Scaling a las atrib
 
 \subsection{Manejo de Desbalance}
 
-El análisis exploratorio inicial reveló que el dataset presenta un desbalance considerable entre clases: 88.18\% de los registros corresponden a ausencia de riesgo cardiovascular, frente a 11.82\% con presencia de riesgo (definido como historial de infarto, enfermedad coronaria, o ACV). Este desbalance se mantiene de forma similar entre géneros (13.57\% en hombres vs. 10.24\% en mujeres), pero varía de forma más notable entre grupos raciales (entre 4.39\% y 14.05\% según el grupo), lo cual es relevante para el análisis de equidad del presente estudio. La Figura~\ref{fig:balance} muestra este porcentaje desglosado por género y por grupo racial. Dado este desbalance, se aplicará SMOTE para el balanceo de los registros.
+El análisis exploratorio inicial reveló que el dataset presenta un desbalance considerable entre clases: 88.18\% de los registros corresponden a ausencia de riesgo cardiovascular, frente a 11.82\% con presencia de riesgo (definido como historial de infarto, enfermedad coronaria, o ACV). Este desbalance se mantiene de forma similar entre géneros (13.57\% en hombres vs. 10.24\% en mujeres), pero varía de forma más notable entre grupos raciales (entre 4.39\% y 14.05\% según el grupo), lo cual es relevante para el análisis de equidad del presente estudio. La Figura~\ref{fig:balance} muestra este porcentaje desglosado por género y por grupo racial. Dado este desbalance, se aplicará SMOTENC para el balanceo de los registros. A diferencia de SMOTE estándar, SMOTENC respeta la naturaleza categórica de variables como sexo, raza e ingreso, entre otras: en vez de interpolar numéricamente entre dos categorías (lo cual generaría valores sin sentido, como un sexo codificado como 1.5), asigna a cada registro sintético el valor más frecuente entre sus vecinos reales para esas columnas.
 
 \begin{figure}[h]
 \centering
