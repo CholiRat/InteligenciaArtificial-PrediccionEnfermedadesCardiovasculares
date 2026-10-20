@@ -9,7 +9,7 @@ import pandas as pd
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import StratifiedKFold
 from sklearn.preprocessing import MinMaxScaler
-from imblearn.over_sampling import SMOTE
+from imblearn.over_sampling import SMOTENC
 
 RANDOM_STATE = 42
 
@@ -76,9 +76,14 @@ def normalizar(X_train, X_test, columnas=CONTINUOUS_COLS):
 
 def aplicar_smote(X_train, y_train, random_state=RANDOM_STATE):
     """Sobremuestreo sintetico de la clase minoritaria, solo sobre el train.
+    Usa SMOTENC (no SMOTE estandar) porque X mezcla columnas continuas y
+    categoricas: SMOTENC respeta las categorias originales de estas ultimas
+    (toma el valor mas comun entre vecinos) en vez de interpolarlas de forma
+    numerica, lo cual evita generar valores sin sentido como _SEX=1.5.
     Alternativa exploratoria: usar class_weight/scale_pos_weight en el
     modelo en vez de llamar esta funcion (ver notebook de cada modelo)."""
-    smote = SMOTE(random_state=random_state)
+    columnas_categoricas = [c for c in X_train.columns if c not in CONTINUOUS_COLS]
+    smote = SMOTENC(categorical_features=columnas_categoricas, random_state=random_state)
     return smote.fit_resample(X_train, y_train)
 
 

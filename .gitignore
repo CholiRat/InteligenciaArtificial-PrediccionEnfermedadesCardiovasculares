@@ -1,3 +1,5 @@
 PY-Etapa1-General.*
 __pycache__/
 *.pyc
+NOTAS-REVISION.md
+data_procesada/
